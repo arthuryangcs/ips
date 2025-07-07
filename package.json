@@ -1,0 +1,64 @@
+{
+  "name": "ips",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@ant-design/plots": "^2.6.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.126",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@types/recharts": "^1.8.29",
+    "adm-zip": "^0.5.16",
+    "antd": "^5.26.3",
+    "axios": "^1.10.0",
+    "body-parser": "^1.20.2",
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.1",
+    "express": "^4.18.2",
+    "multer": "^2.0.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.3",
+    "react-scripts": "5.0.1",
+    "recharts": "^3.0.2",
+    "sqlite3": "^5.1.6",
+    "typescript": "^4.9.5",
+    "web-vitals": "^2.1.4"
+  },
+  "proxy": "http://localhost:5001",
+  "scripts": {
+    "start": "npx concurrently \"react-scripts start\" \"node src/server/index.js\"",
+    "server": "node src/server/index.js",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@types/dompurify": "^3.0.5",
+    "dompurify": "^3.2.6"
+  }
+}
