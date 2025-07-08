@@ -44,14 +44,14 @@ const Register: React.FC = () => {
 
   const onFinishFailed = (errorInfo: any) => {
     console.log('Validation failed:', errorInfo);
-    message.error('表单验证失败，请检查输入内容');
+    messageApi.error('表单验证失败，请检查输入内容');
   };
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
+      {contextHolder}
       <Content style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f0f2f5', padding: '24px' }}>
         <Card title="用户注册" style={{ width: 360 }}>
-          {contextHolder}
           <Form
             form={form}
             name="register"

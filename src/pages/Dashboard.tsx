@@ -18,6 +18,7 @@ const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
 
 const Dashboard: React.FC = () => {
+  const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
   const username = userInfo.username || '用户';
@@ -40,7 +41,7 @@ const Dashboard: React.FC = () => {
       });
       setResources(response.data);
     } catch (error: any) {
-      message.error(error.response?.data?.message || '获取资源失败');
+      messageApi.error(error.response?.data?.message || '获取资源失败');
     } finally {
       setLoading(false);
     }
@@ -66,7 +67,7 @@ const Dashboard: React.FC = () => {
       setFileContent(sanitizedContent);
       setIsModalVisible(true);
     } catch (error) {
-      message.error('获取文件内容失败');
+      messageApi.error('获取文件内容失败');
     } finally {
       setLoadingContent(false);
     }
@@ -81,16 +82,17 @@ const Dashboard: React.FC = () => {
     if (!currentDeleteId) return;
     try {
       await axios.delete(`http://localhost:5001/api/resources/${currentDeleteId}`);
-      message.success('删除成功');
+      messageApi.success('删除成功');
       fetchResources(); // 刷新资源列表
       setIsDeleteModalVisible(false);
     } catch (error: any) {
-      message.error(error.response?.data?.message || '删除失败');
+      messageApi.error(error.response?.data?.message || '删除失败');
     }
   };
 
   return (
       <Content style={{ margin: '24px 16px 0', overflow: 'auto' }}>
+        {contextHolder}
         <div
           style={{
             padding: 24,

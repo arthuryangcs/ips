@@ -4,6 +4,7 @@ import { UploadOutlined, SyncOutlined } from '@ant-design/icons';
 import { getBase64 } from '../utils/imageUtils';
 
 const ImageComparison: React.FC = () => {
+    const [messageApi, contextHolder] = message.useMessage();
   const [image1, setImage1] = useState<string | null>(null);
   const [image2, setImage2] = useState<string | null>(null);
   const [similarity, setSimilarity] = useState<number | null>(null);
@@ -13,7 +14,7 @@ const ImageComparison: React.FC = () => {
   const handleImageUpload = (side: 'left' | 'right', file: any) => {
     return new Promise((resolve, reject) => {
       if (!file.type.startsWith('image/')) {
-        message.error('请上传图片文件');
+        messageApi.error('请上传图片文件');
         reject(new Error('不是有效的图片文件'));
         return;
       }
@@ -26,7 +27,7 @@ const ImageComparison: React.FC = () => {
         }
         resolve(true);
       }).catch(err => {
-        message.error('图片处理失败');
+        messageApi.error('图片处理失败');
         reject(err);
       });
     });
@@ -34,7 +35,7 @@ const ImageComparison: React.FC = () => {
 
   const compareImages = () => {
     if (!image1 || !image2) {
-      message.warning('请先上传两张图片');
+      messageApi.warning('请先上传两张图片');
       return;
     }
 
@@ -53,7 +54,7 @@ const ImageComparison: React.FC = () => {
   const uploadProps = (side: 'left' | 'right') => ({
     beforeUpload: async (file: File) => {
       if (!file.type.startsWith('image/')) {
-        message.error('请上传图片文件');
+        messageApi.error('请上传图片文件');
         return false;
       }
       try {
@@ -65,7 +66,7 @@ const ImageComparison: React.FC = () => {
         }
         return false;
       } catch (err) {
-        message.error('图片处理失败');
+        messageApi.error('图片处理失败');
         return false;
       }
     },
@@ -75,6 +76,7 @@ const ImageComparison: React.FC = () => {
 
   return (
     <div style={{ padding: '20px' }}>
+      {contextHolder}
       <h2 style={{ textAlign: 'center', marginBottom: '30px' }}>图片相似度检测</h2>
 
       <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '30px' }}>

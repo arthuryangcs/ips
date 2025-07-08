@@ -3,6 +3,7 @@ import { Card, Button, Input, Progress, message } from 'antd';
 import { CodeOutlined, SyncOutlined } from '@ant-design/icons';
 
 const CodeComparison: React.FC = () => {
+  const [messageApi, contextHolder] = message.useMessage();
   const [code1, setCode1] = useState<string>('');
   const [code2, setCode2] = useState<string>('');
   const [similarity, setSimilarity] = useState<number | null>(null);
@@ -33,7 +34,7 @@ const CodeComparison: React.FC = () => {
 
   const handleCompare = () => {
     if (!code1.trim() || !code2.trim()) {
-      message.warning('请输入两段代码进行比较');
+      messageApi.warning('请输入两段代码进行比较');
       return;
     }
 
@@ -50,6 +51,7 @@ const CodeComparison: React.FC = () => {
 
   return (
     <div style={{ padding: '20px' }}>
+      {contextHolder}
       <h2 style={{ textAlign: 'center', marginBottom: '30px' }}>代码相似度检测</h2>
 
       <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '30px' }}>

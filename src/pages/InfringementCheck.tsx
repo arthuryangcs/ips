@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 const { Title, Text } = Typography;
 
 const InfringementCheck: React.FC = () => {
+  const [messageApi, contextHolder] = message.useMessage();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const InfringementCheck: React.FC = () => {
     if (userInfo.id) {
       formData.append('userId', userInfo.id);
     } else {
-      message.error('用户未登录或会话已过期');
+      messageApi.error('用户未登录或会话已过期');
       return;
     }
 
@@ -40,15 +41,15 @@ const InfringementCheck: React.FC = () => {
       });
 
       if (!response.data || !response.data.taskId) {
-        message.error('获取任务ID失败');
+        messageApi.error('获取任务ID失败');
         return;
       }
 
-      message.success('压缩包上传成功，正在进行侵权检测');
+      messageApi.success('压缩包上传成功，正在进行侵权检测');
       // 获取任务ID并跳转到风险监测页面
-      navigate(`/risk-monitoring?taskId=${response.data.taskId}`);
+      navigate(`/risk?taskId=${response.data.taskId}`);
     } catch (error) {
-      message.error('压缩包上传失败，请重试');
+      messageApi.error('压缩包上传失败，请重试');
       console.error('Upload error:', error);
     } finally {
       setUploading(false);
@@ -59,12 +60,12 @@ const InfringementCheck: React.FC = () => {
   const beforeUpload = (file: any) => {
     const isZip = file.type === 'application/zip' || file.name.endsWith('.zip');
     if (!isZip) {
-      message.error('请上传ZIP格式的压缩包');
+      messageApi.error('请上传ZIP格式的压缩包');
       return false;
     }
     const isLt200M = file.size / 1024 / 1024 < 200;
     if (!isLt200M) {
-      message.error('压缩包大小不能超过200MB');
+      messageApi.error('压缩包大小不能超过200MB');
       return false;
     }
     return true;
@@ -84,6 +85,7 @@ const InfringementCheck: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '2rem' }}>
+      {contextHolder}
       <Title level={2}>侵权自检</Title>
       <Card
         style={{ marginTop: '1rem', padding: '2rem', textAlign: 'center' }}
