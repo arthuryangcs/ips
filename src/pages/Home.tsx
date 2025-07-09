@@ -69,6 +69,7 @@ const Home: React.FC = () => {
 
     fetchResourceSummary();
   }, [navigate]);
+  console.log(summaryData)
 
   return (
     <Content style={{ padding: '0 24px' }}>
@@ -83,6 +84,7 @@ const Home: React.FC = () => {
               <Statistic
                 title="总资产数"
                 value={totalResources}
+                // value={summaryData.find(item => true)?.count || 0}
                 prefix={<span>📁</span>}
                 valueStyle={{ color: '#3f8600' }}
               />
@@ -92,7 +94,7 @@ const Home: React.FC = () => {
             <Card>
               <Statistic
                 title="代码资产"
-                value={summaryData.find(item => item.resource_type === 'code')?.count || 0}
+                value={resourceTypeData.find(item => item.resource_type === 'code')?.count || 0}
                 prefix={<span>📄</span>}
                 valueStyle={{ color: '#1890ff' }}
               />
@@ -102,7 +104,7 @@ const Home: React.FC = () => {
             <Card>
               <Statistic
                 title="图片资产"
-                value={summaryData.find(item => item.resource_type === 'image')?.count || 0}
+                value={resourceTypeData.find(item => item.resource_type === 'image')?.count || 0}
                 prefix={<span>🖼️</span>}
                 valueStyle={{ color: '#ff7a45' }}
               />
@@ -112,7 +114,7 @@ const Home: React.FC = () => {
             <Card>
               <Statistic
                 title="字体资产"
-                value={summaryData.find(item => item.resource_type === 'font')?.count || 0}
+                value={resourceTypeData.find(item => item.resource_type === 'font')?.count || 0}
                 prefix={<span>🔤</span>}
                 valueStyle={{ color: '#722ed1' }}
               />
