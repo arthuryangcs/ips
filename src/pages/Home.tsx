@@ -69,7 +69,6 @@ const Home: React.FC = () => {
 
     fetchResourceSummary();
   }, [navigate]);
-  console.log(summaryData)
 
   return (
     <Content style={{ padding: '0 24px' }}>
