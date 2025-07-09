@@ -37,6 +37,8 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (currentPath === '/upload-resource') return 'upload';
     if (currentPath === '/infringement') return 'infringement';
     if (currentPath === '/risk') return 'risk';
+    if (currentPath === '/version-record') return 'version-record';
+    if (currentPath === '/compliance-alert') return 'compliance-alert';
     if (currentPath === '/image-comparison') return 'image-comparison';
     if (currentPath === '/code-comparison') return 'code-comparison';
     if (currentPath === '/login') return 'login';
@@ -50,12 +52,28 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // 动态生成菜单项
   const baseItems = [
     { key: 'home', icon: <HomeOutlined />, label: '首页', onClick: () => handleNavigate('/') },
-    { key: 'upload', icon: <UploadOutlined />, label: '上传资源', onClick: () => handleNavigate('/upload-resource') },
-    { key: 'dashboard', icon: <DashboardOutlined />, label: '资源概览', onClick: () => handleNavigate('/dashboard') },
-    { key: 'infringement', icon: <CheckCircleOutlined />, label: '侵权自检', onClick: () => handleNavigate('/infringement') },
-    { key: 'risk', icon: <AlertOutlined />, label: '风险监测', onClick: () => handleNavigate('/risk') },
-    { key: 'image-comparison', icon: <PictureOutlined />, label: '图片检测', onClick: () => handleNavigate('/image-comparison') },
-    { key: 'code-comparison', icon: <CodeOutlined />, label: '代码检测', onClick: () => handleNavigate('/code-comparison') },
+    {
+      key: 'ip-library',
+      icon: <DashboardOutlined />,
+      label: 'IP资产档案库',
+      children: [
+        { key: 'upload', icon: <UploadOutlined />, label: '上传资产', onClick: () => handleNavigate('/upload-resource') },
+        { key: 'dashboard', icon: <DashboardOutlined />, label: '资产归档', onClick: () => handleNavigate('/dashboard') },
+        { key: 'version-record', icon: <CheckCircleOutlined />, label: '版本存证记录', onClick: () => handleNavigate('/version-record') }
+      ]
+    },
+    {
+      key: 'ip-risk-radar',
+      icon: <AlertOutlined />,
+      label: 'IP风险雷达',
+      children: [
+        { key: 'infringement', icon: <CheckCircleOutlined />, label: '侵权风险扫描', onClick: () => handleNavigate('/infringement') },
+        { key: 'risk', icon: <AlertOutlined />, label: '权属健康监测', onClick: () => handleNavigate('/risk') },
+        { key: 'compliance-alert', icon: <AlertOutlined />, label: '合规性预警', onClick: () => handleNavigate('/compliance-alert') },
+        { key: 'image-comparison', icon: <PictureOutlined />, label: '图片检测', onClick: () => handleNavigate('/image-comparison') },
+        { key: 'code-comparison', icon: <CodeOutlined />, label: '代码检测', onClick: () => handleNavigate('/code-comparison') }
+      ]
+    }
   ];
 
   const items = [...baseItems];
@@ -94,6 +112,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           mode="inline"
           selectedKeys={[getSelectedKey()]}
           items={items}
+         defaultOpenKeys={['ip-library', 'ip-risk-radar']}
         />
       </Sider>
       <Layout>
@@ -121,6 +140,8 @@ function App() {
             <Route path="/upload-resource" element={<UploadResource />} />
             <Route path="/infringement" element={<InfringementCheck />} />
             <Route path="/risk" element={<RiskMonitoring />} />
+            <Route path="/version-record" element={<div>版本存证记录页面</div>} />
+            <Route path="/compliance-alert" element={<div>合规性预警页面</div>} />
             <Route path="/image-comparison" element={<ImageComparison />} />
             <Route path="/code-comparison" element={<CodeComparison />} />
             <Route path="*" element={<Navigate to="/" replace />} />

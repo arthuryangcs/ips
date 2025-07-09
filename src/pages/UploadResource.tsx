@@ -45,7 +45,7 @@ const UploadResource: React.FC<UploadResourceProps> = ({ onSuccess }) => {
     // 从本地存储获取用户信息
     const userInfoStr = localStorage.getItem('userInfo');
     if (!userInfoStr) {
-      setError('请先登录后再上传资源');
+      setError('请先登录后再上传资产');
       return;
     }
     const userInfo = JSON.parse(userInfoStr);
@@ -60,7 +60,7 @@ const UploadResource: React.FC<UploadResourceProps> = ({ onSuccess }) => {
     }
     
     if (!selectedType) {
-      setError('请选择资源类型');
+      setError('请选择资产类型');
       return;
     }
     
@@ -158,11 +158,15 @@ const UploadResource: React.FC<UploadResourceProps> = ({ onSuccess }) => {
                     </div>
                 }
                 title={
-                  <span style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>
+                  <span style={{ maxWidth: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>
                       {file.name || file.originFileObj?.name || '未知文件名'}
                     </span>
                 }
-                description={`${formatFileSize(file.size || file.originFileObj?.size)} • ${getFileType(file.name || file.originFileObj?.name)}`}
+                description={
+                  <span style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>
+                    {formatFileSize(file.size || file.originFileObj?.size)}
+                  </span>
+                }
               />
             </List.Item>
           )}
@@ -183,22 +187,22 @@ const UploadResource: React.FC<UploadResourceProps> = ({ onSuccess }) => {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '20px' }}>
       {contextHolder}
-      <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>资源上传</Title>
+      <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>资产上传</Title>
       <div>
-        <Card title="资源上传"
+        <Card title="资产上传"
           bordered
           style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)', borderRadius: 8 }}
         >
           <div style={{ marginBottom: 24 }}>
             <Space direction="vertical" size="large">
               <div>
-                <Paragraph strong>资源信息</Paragraph>
+                <Paragraph strong>资产信息</Paragraph>
                 <Divider style={{ margin: '12px 0' }} />
                 <Space.Compact style={{ width: '100%' }}>
                   <Select
                     value={selectedType}
                     onChange={value => setSelectedType(value)}
-                    placeholder="请选择资源类型"
+                    placeholder="请选择资产类型"
                     style={{ flex: 1, marginRight: 16 }}
                     allowClear={false}
                   >

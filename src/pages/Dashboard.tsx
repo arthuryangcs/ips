@@ -29,8 +29,10 @@ const Dashboard: React.FC = () => {
   const [loadingContent, setLoadingContent] = React.useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = React.useState(false);
   const [currentDeleteId, setCurrentDeleteId] = React.useState<number | null>(null);
-
-  // 获取资源列表
+  // 添加图片文件标识状态
+  const [isImageFile, setIsImageFile] = React.useState(false);
+  
+  // 获取资产列表
   const fetchResources = async () => {
     if (!userInfo || !userInfo.id) return;
 
@@ -41,7 +43,7 @@ const Dashboard: React.FC = () => {
       });
       setResources(response.data);
     } catch (error: any) {
-      messageApi.error(error.response?.data?.message || '获取资源失败');
+      messageApi.error(error.response?.data?.message || '获取资产失败');
     } finally {
       setLoading(false);
     }
@@ -58,13 +60,24 @@ const Dashboard: React.FC = () => {
 
   const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
 
-  const handleViewFile = async (id: number) => {
+  const handleViewFile = async (id: number, filename: string) => {
     try {
       setLoadingContent(true);
-      const response = await axios.get(`/api/resources/${id}/content`);
-      // 净化文件内容，防止XSS注入
-      const sanitizedContent = DOMPurify.sanitize(response.data.content);
-      setFileContent(sanitizedContent);
+      // 检查文件是否为图片
+      const isImage = /\.(jpg|jpeg|png|gif|bmp)$/i.test(filename);
+      
+      if (isImage) {
+        // 对于图片，直接设置URL
+        setFileContent(`/api/resources/${id}/content`);
+      } else {
+        // 对于其他文件，获取内容
+        const response = await axios.get(`/api/resources/${id}/content`);
+        // 净化文件内容，防止XSS注入
+        const sanitizedContent = DOMPurify.sanitize(response.data.content);
+        setFileContent(sanitizedContent);
+      }
+      // 存储文件类型信息
+      setIsImageFile(isImage);
       setIsModalVisible(true);
     } catch (error) {
       messageApi.error('获取文件内容失败');
@@ -83,7 +96,7 @@ const Dashboard: React.FC = () => {
     try {
       await axios.delete(`http://localhost:5001/api/resources/${currentDeleteId}`);
       messageApi.success('删除成功');
-      fetchResources(); // 刷新资源列表
+      fetchResources(); // 刷新资产列表
       setIsDeleteModalVisible(false);
     } catch (error: any) {
       messageApi.error(error.response?.data?.message || '删除失败');
@@ -101,12 +114,12 @@ const Dashboard: React.FC = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <Title level={2}>资源概览</Title>
+          <Title level={2}>资产归档</Title>
           {loading ? (
             <Spin size="large" style={{ display: 'block', margin: '50px auto' }} />
           ) : resources.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '50px 0' }}>
-              <p>暂无上传资源</p>
+              <p>暂无上传资产</p>
             </div>
           ) : (
             <>
@@ -119,7 +132,7 @@ const Dashboard: React.FC = () => {
                     key: 'filename',
                   },
                   {
-                    title: '资源类型',
+                    title: '资产类型',
                     dataIndex: 'resource_type',
                     key: 'resource_type',
                     width: 120
@@ -156,7 +169,7 @@ const Dashboard: React.FC = () => {
                     key: 'action',
                     render: (_, record) => (
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <Button type="primary" size="small" onClick={() => handleViewFile(record.id)}>
+                        <Button type="primary" size="small" onClick={() => handleViewFile(record.id, record.filename)}>
                           查看
                         </Button>
                         <Button type="primary" size="small" onClick={() => handleDelete(record.id)}>
@@ -176,7 +189,17 @@ const Dashboard: React.FC = () => {
                 width={800}
               >
                 <Spin spinning={loadingContent}>
-                  <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{fileContent}</pre>
+                  {isImageFile ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+                      <img 
+                        src={fileContent} 
+                        alt="Preview" 
+                        style={{ maxWidth: '100%', maxHeight: '600px' }} 
+                      />
+                    </div>
+                  ) : (
+                    <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{fileContent}</pre>
+                  )}
                 </Spin>
               </Modal>
               <Modal
@@ -188,7 +211,7 @@ const Dashboard: React.FC = () => {
                 cancelText="取消"
                 style={{ zIndex: 1000 }}
               >
-                <p>确定要删除此资源吗？此操作不可恢复。</p>
+                <p>确定要删除此资产吗？此操作不可恢复。</p>
               </Modal>
             </>
           )}

@@ -33,8 +33,8 @@ const RiskMonitoring: React.FC = () => {
       }
       const response = await axios.get(`/api/users/${userInfo.id}/tasks`);
       setUserTasks(response.data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || '获取用户任务列表失败');
+    // } catch (err: any) {
+    //   setError(err.response?.data?.message || '获取用户任务列表失败');
     } finally {
       setTasksLoading(false);
     }
@@ -60,7 +60,7 @@ const RiskMonitoring: React.FC = () => {
   // 加载当前任务状态
   useEffect(() => {
     if (!taskId) {
-      setError('任务ID不存在');
+      // setError('任务ID不存在');
       setLoading(false);
       return;
     }
@@ -70,6 +70,8 @@ const RiskMonitoring: React.FC = () => {
         const response = await axios.get(`/api/tasks/${taskId}`);
         setTask(response.data);
         setError('');
+        // 刷新任务列表
+        fetchUserTasks();
 
         if (response.data.status === 'completed' || response.data.status === 'failed') {
           intervalId && clearInterval(intervalId);

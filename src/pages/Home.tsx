@@ -15,7 +15,7 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // 资源类型颜色映射
+  // 资产类型颜色映射
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   useEffect(() => {
@@ -33,7 +33,7 @@ const Home: React.FC = () => {
         const response = await axios.get(`/api/resources/summary?userInfo=${encodeURIComponent(userInfoStr)}`);
         const data: { resource_type: string; authorization_status: string; count: number }[] = response.data;
         setSummaryData(data);
-        // 计算总资源数
+        // 计算总资产数
         const total = data.reduce((sum: number, item) => sum + item.count, 0);
         setTotalResources(total);
         // 按授权状态汇总
@@ -47,7 +47,7 @@ const Home: React.FC = () => {
           return acc;
         }, [] as { authorization_status: string; count: number }[]);
         setAuthorizationSummary(authSummary);
-        // 按资源类型汇总
+        // 按资产类型汇总
         const resourceTypeData = data
           .filter(item => item.resource_type !== undefined && item.count !== undefined)
           .reduce((acc, item) => {
@@ -61,7 +61,7 @@ const Home: React.FC = () => {
           }, [] as { resource_type: string; count: number }[]);
         setResourceTypeData(resourceTypeData);
       } catch (err: any) {
-        messageApi.error(err.message || '获取资源汇总数据失败');
+        messageApi.error(err.message || '获取资产汇总数据失败');
       } finally {
         setLoading(false);
       }
@@ -81,7 +81,7 @@ const Home: React.FC = () => {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="总资源数"
+                title="总资产数"
                 value={totalResources}
                 prefix={<span>📁</span>}
                 valueStyle={{ color: '#3f8600' }}
@@ -91,7 +91,7 @@ const Home: React.FC = () => {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="代码资源"
+                title="代码资产"
                 value={summaryData.find(item => item.resource_type === 'code')?.count || 0}
                 prefix={<span>📄</span>}
                 valueStyle={{ color: '#1890ff' }}
@@ -101,7 +101,7 @@ const Home: React.FC = () => {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="图片资源"
+                title="图片资产"
                 value={summaryData.find(item => item.resource_type === 'image')?.count || 0}
                 prefix={<span>🖼️</span>}
                 valueStyle={{ color: '#ff7a45' }}
@@ -111,7 +111,7 @@ const Home: React.FC = () => {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="字体资源"
+                title="字体资产"
                 value={summaryData.find(item => item.resource_type === 'font')?.count || 0}
                 prefix={<span>🔤</span>}
                 valueStyle={{ color: '#722ed1' }}
@@ -124,7 +124,7 @@ const Home: React.FC = () => {
           <Col xs={24} sm={12} lg={8}>
             <Card>
               <Statistic
-                title="已授权资源"
+                title="已授权资产"
                 value={authorizationSummary.find(item => item.authorization_status === '已授权')?.count || 0}
                 prefix={<span>✅</span>}
                 valueStyle={{ color: '#52c41a' }}
@@ -134,7 +134,7 @@ const Home: React.FC = () => {
           <Col xs={24} sm={12} lg={8}>
             <Card>
               <Statistic
-                title="可商用资源"
+                title="可商用资产"
                 value={authorizationSummary.find(item => item.authorization_status === '可商用')?.count || 0}
                 prefix={<span>💼</span>}
                 valueStyle={{ color: '#fa8c16' }}
@@ -144,7 +144,7 @@ const Home: React.FC = () => {
           <Col xs={24} sm={12} lg={8}>
             <Card>
               <Statistic
-                title="未授权资源"
+                title="未授权资产"
                 value={authorizationSummary.find(item => item.authorization_status === '未授权')?.count || 0}
                 prefix={<span>❌</span>}
                 valueStyle={{ color: '#ff4d4f' }}
@@ -155,7 +155,7 @@ const Home: React.FC = () => {
 
             <Row gutter={[16, 16]}>
               <Col span={12}>
-                <Card title="资源类型分布">
+                <Card title="资产类型分布">
                   <Pie
                     chartId="resourceTypePie"
                     data={resourceTypeData}

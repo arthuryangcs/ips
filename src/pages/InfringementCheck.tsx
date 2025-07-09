@@ -92,7 +92,7 @@ const InfringementCheck: React.FC = () => {
         bordered
       >
         <Text type="secondary" style={{ display: 'block', marginBottom: '1.5rem' }}>
-          上传包含代码和图片的压缩包，系统将自动检测与资源库的相似度
+          上传包含代码和图片的压缩包，系统将自动检测与资产库的相似度
         </Text>
         <Upload
           name="zipFile"

@@ -67,7 +67,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   db.run(insertQuery, [file.originalname, file.mimetype, file.path, userId, resourceType, authorizationStatus], function(err) {
     if (err) {
       console.error('Error inserting resource:', err);
-      return res.status(500).json({ message: '保存资源失败' });
+      return res.status(500).json({ message: '保存资产失败' });
     }
     res.json({ message: '文件上传成功', resourceId: this.lastID });
   });
@@ -157,7 +157,7 @@ app.post('/api/login', (req, res) => {
   });
 });
 
-// 获取资源类型汇总统计接口
+// 获取资产类型汇总统计接口
 app.get('/api/resources/summary', (req, res) => {
   const userInfo = req.query.userInfo ? JSON.parse(req.query.userInfo) : null;
   if (!userInfo || !userInfo.id) {
@@ -173,14 +173,14 @@ app.get('/api/resources/summary', (req, res) => {
 
   db.all(query, [], (err, rows) => {
     if (err) {
-      console.error('获取资源统计失败:', err);
-      return res.status(500).json({ message: '获取资源统计失败' });
+      console.error('获取资产统计失败:', err);
+      return res.status(500).json({ message: '获取资产统计失败' });
     }
     res.json(rows);
   });
 });
 
-// 获取资源列表接口
+// 获取资产列表接口
 app.get('/api/resources', (req, res) => {
   const userInfo = req.query.userInfo ? JSON.parse(req.query.userInfo) : null;
   if (!userInfo || !userInfo.id) {
@@ -189,7 +189,7 @@ app.get('/api/resources', (req, res) => {
 
   db.all('SELECT id, resource_type, filename, file_type, uploaded_at, authorization_status FROM resources ORDER BY uploaded_at DESC', [], (err, rows) => {
     if (err) {
-      return res.status(500).json({ message: '获取资源失败', error: err.message });
+      return res.status(500).json({ message: '获取资产失败', error: err.message });
     }
     res.json(rows);
   });
@@ -219,7 +219,7 @@ app.get('/api/resources/:id/content', async (req, res) => {
   }
 });
 
-// 添加资源删除接口
+// 添加资产删除接口
 app.delete('/api/resources/:id', (req, res) => {
   const { id } = req.params;
   
@@ -229,7 +229,7 @@ app.delete('/api/resources/:id', (req, res) => {
       return res.status(500).json({ message: '数据库错误', error: err.message });
     }
     if (!row) {
-      return res.status(404).json({ message: '资源不存在' });
+      return res.status(404).json({ message: '资产不存在' });
     }
     
     // 删除文件
@@ -242,9 +242,9 @@ app.delete('/api/resources/:id', (req, res) => {
       // 删除数据库记录
       db.run('DELETE FROM resources WHERE id = ?', [id], (err) => {
         if (err) {
-          return res.status(500).json({ message: '删除资源失败', error: err.message });
+          return res.status(500).json({ message: '删除资产失败', error: err.message });
         }
-        res.json({ message: '资源删除成功' });
+        res.json({ message: '资产删除成功' });
       });
     });
   });

@@ -25,7 +25,7 @@ function initUserTable() {
   });
 }
 
-// 初始化资源表
+// 初始化资产表
 function initResourceTable() {
   const sql = `
     CREATE TABLE IF NOT EXISTS resources (
@@ -40,6 +40,14 @@ function initResourceTable() {
       FOREIGN KEY(user_id) REFERENCES users(id)
     );
   `;
+
+  db.run(sql, (err) => {
+    if (err) {
+      console.error('创建资产表错误:', err.message);
+    } else {
+      console.log('资产表初始化成功');
+    }
+  });
 
   // 检查并添加authorization_status列
   function checkAndAddAuthorizationColumn() {
@@ -101,7 +109,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.log('成功连接到SQLite数据库');
     // 初始化用户表
     initUserTable();
-    // 初始化资源表
+    // 初始化资产表
     initResourceTable();
     // 初始化任务表
     initTaskTable();
