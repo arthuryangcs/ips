@@ -159,10 +159,11 @@ app.post('/api/login', (req, res) => {
 
 // 获取资产类型汇总统计接口
 app.get('/api/resources/summary', (req, res) => {
-  const userInfo = req.query.userInfo ? JSON.parse(req.query.userInfo) : null;
-  if (!userInfo || !userInfo.id) {
-    return res.status(401).json({ message: '用户未登录' });
-  }
+  // 不需要登录
+  // const userInfo = req.query.userInfo ? JSON.parse(req.query.userInfo) : null;
+  // if (!userInfo || !userInfo.id) {
+  //   return res.status(401).json({ message: '用户未登录' });
+  // }
 
   const query = `
     SELECT resource_type, COALESCE(authorization_status, '未授权') as authorization_status, COUNT(*) as count
@@ -182,10 +183,11 @@ app.get('/api/resources/summary', (req, res) => {
 
 // 获取资产列表接口
 app.get('/api/resources', (req, res) => {
-  const userInfo = req.query.userInfo ? JSON.parse(req.query.userInfo) : null;
-  if (!userInfo || !userInfo.id) {
-    return res.status(401).json({ message: '用户未登录' });
-  }
+  // 不需要登录
+  // const userInfo = req.query.userInfo ? JSON.parse(req.query.userInfo) : null;
+  // if (!userInfo || !userInfo.id) {
+  //   return res.status(401).json({ message: '用户未登录' });
+  // }
 
   db.all('SELECT id, resource_type, filename, file_type, uploaded_at, authorization_status FROM resources ORDER BY uploaded_at DESC', [], (err, rows) => {
     if (err) {
