@@ -285,7 +285,6 @@ app.post('/api/upload-zip', upload.single('zipFile'), async (req, res) => {
       // 过滤出文件条目，排除文件夹
       const fileEntries = zipEntries.filter(entry => !entry.isDirectory);
       const totalFiles = fileEntries.length;
-      let completedFiles = 0;
 
       // 更新任务总文件数
       db.run('UPDATE tasks SET total_files = ? WHERE id = ?', [totalFiles, taskId]);
