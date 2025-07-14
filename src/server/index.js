@@ -189,7 +189,7 @@ app.get('/api/resources', (req, res) => {
   //   return res.status(401).json({ message: '用户未登录' });
   // }
 
-  db.all('SELECT id, resource_type, filename, file_type, uploaded_at, authorization_status FROM resources ORDER BY uploaded_at DESC', [], (err, rows) => {
+  db.all('SELECT id, resource_type, filename, file_type, uploaded_at, authorization_status, asset_name, asset_no, project FROM resources ORDER BY uploaded_at DESC', [], (err, rows) => {
     if (err) {
       return res.status(500).json({ message: '获取资产失败', error: err.message });
     }
@@ -411,7 +411,174 @@ app.get('/api/users/:userId/tasks', (req, res) => {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// 新增资产接口 - 支持多文件上传
+app.post('/api/assets/create', upload.array('files', 10), (req, res) => {  // 最多上传10个文件
+  const files = req.files;
+  const userId = req.body.userId;
+  const assetInfo = JSON.parse(req.body.assetInfo || '{}');
+  const trademarkRegNo = req.body.trademarkRegNo;
+
+  // 验证必填字段
+  if (!assetInfo.assetName || !assetInfo.assetNo || !assetInfo.project) {
+    return res.status(400).json({ message: '资产名称、编号和项目为必填项' });
+  }
+
+  if (!files || files.length === 0) {
+    return res.status(400).json({ message: '请选择至少一个文件' });
+  }
+
+  if (!userId) {
+    return res.status(400).json({ message: '用户ID不能为空' });
+  }
+
+  // 生成存证信息
+  const certificateNo = `IPS-${Date.now()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+  const fileHash = require('crypto').createHash('sha256')
+    .update(JSON.stringify(files.map(f => f.originalname + f.size)) + Date.now())
+    .digest('hex');
+  const certificateTimestamp = new Date().toISOString();
+  const certificatePlatform = 'IPS-存证平台';
+  const verifyUrl = `http://localhost:5001/verify/${certificateNo}`;
+
+  // 准备批量插入数据
+  const insertPromises = files.map(file => {
+    return new Promise((resolve, reject) => {
+      const insertQuery = `
+        INSERT INTO resources (
+          filename, file_type, file_path, user_id, resource_type, authorization_status,
+          asset_name, asset_no, project, asset_level, creation_date, declarant,
+          creation_type, creator, trademark_reg_no, certificate_no, certificate_platform,
+          certificate_timestamp, file_hash, verify_url
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const values = [
+        file.originalname,
+        file.mimetype,
+        file.path,
+        userId,
+        assetInfo.resourceType || '',
+        assetInfo.authorizationStatus || '未授权',
+        assetInfo.assetName || '',
+        assetInfo.assetNo || '',
+        assetInfo.project || '',
+        assetInfo.assetLevel || '',
+        assetInfo.creationDate || '',
+        assetInfo.declarant || '',
+        assetInfo.creationType || '',
+        assetInfo.creator || '',
+        trademarkRegNo || '',
+        certificateNo,
+        certificatePlatform,
+        certificateTimestamp,
+        fileHash,
+        verifyUrl,
+      ];
+
+      db.run(insertQuery, values, function(err) {
+        if (err) {
+          console.error('Error inserting resource:', err);
+          reject(err);
+        } else {
+          resolve(this.lastID);
+        }
+      });
+    });
+  });
+
+  // 执行批量插入
+  Promise.all(insertPromises)
+    .then(resourceIds => {
+      res.json({
+        message: '资产新增成功',
+        resourceIds: resourceIds,
+        certificate: {
+          certificateNo: certificateNo,
+          platform: certificatePlatform,
+          timestamp: certificateTimestamp,
+          fileHash: fileHash,
+          verifyUrl: verifyUrl
+        }
+      });
+    })
+    .catch(err => {
+      console.error('批量插入失败:', err);
+      res.status(500).json({ message: '保存资产失败', error: err.message });
+    });
+});
+
 // 启动服务器
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// 获取资产详情接口
+app.get('/api/resources/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // 查询资产基本信息
+    const asset = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM resources WHERE id = ?', [id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!asset) {
+      return res.status(404).json({ message: '资产不存在' });
+    }
+
+    // 查询版本历史
+    const versions = await new Promise((resolve, reject) => {
+      db.all('SELECT * FROM resources WHERE asset_name = ? ORDER BY id DESC', [asset.asset_name], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+
+    // 检查是否为图片文件
+    const isImage = /\.(jpg|jpeg|png|gif|bmp)$/i.test(asset.filename);
+
+    // 构建响应数据
+    const assetDetail = {
+      id: asset.id,
+      asset_name: asset.asset_name,
+      asset_no: asset.asset_no,
+      certificate_no: asset.certificate_no,
+      resource_type: asset.resource_type,
+      asset_level: asset.asset_level,
+      project: asset.project,
+      status: asset.authorization_status,
+      in_use: asset.in_use === 1,
+      external_authorization: asset.external_authorization === 1,
+      creator: asset.creator,
+      completion_date: asset.creation_date,
+      rights_ownership: asset.rights_ownership || '公司自有',
+      declarant: asset.declarant,
+      declaration_date: asset.declaration_date,
+      reviewer: asset.reviewer || '系统自动审核',
+      review_date: asset.review_date,
+      versions: versions.map(version => ({
+        version: version.version_number,
+        asset_no: version.asset_no,
+        certificate_no: version.certificate_no,
+        creator: version.creator,
+        completion_date: version.completion_date,
+        rights_ownership: version.rights_ownership,
+        description: version.description,
+        declarant: version.declarant,
+        declaration_date: version.declaration_date,
+        reviewer: version.reviewer,
+        review_date: version.review_date
+      })),
+      file_url: `/api/resources/${id}/content`,
+      is_image: isImage
+    };
+
+    res.json(assetDetail);
+  } catch (error) {
+    console.error('获取资产详情失败:', error);
+    res.status(500).json({ message: '获取资产详情失败' });
+  }
 });

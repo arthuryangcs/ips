@@ -1,7 +1,7 @@
 import React from 'react';
 import { App as AntdApp, Layout, Menu } from 'antd';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { HomeOutlined, DashboardOutlined, UploadOutlined, LoginOutlined, LogoutOutlined, CheckCircleOutlined, AlertOutlined, PictureOutlined, CodeOutlined } from '@ant-design/icons';
+import { HomeOutlined, DashboardOutlined, UploadOutlined, LoginOutlined, LogoutOutlined, CheckCircleOutlined, AlertOutlined, PictureOutlined, CodeOutlined} from '@ant-design/icons';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import UploadResource from './pages/UploadResource';
 import ImageComparison from './pages/ImageComparison';
 import CodeComparison from './pages/CodeComparison';
+import AssetDetail from './pages/AssetDetail';
 import './App.css';
 import logo from './logo.svg';
 import InfringementCheck from './pages/InfringementCheck';
@@ -42,6 +43,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (currentPath === '/image-comparison') return 'image-comparison';
     if (currentPath === '/code-comparison') return 'code-comparison';
     if (currentPath === '/login') return 'login';
+    if (currentPath.includes('/asset-detail')) return 'asset-detail';
     return 'home';
   };
 
@@ -57,8 +59,9 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       icon: <DashboardOutlined />,
       label: 'IP资产档案库',
       children: [
-        { key: 'upload', icon: <UploadOutlined />, label: '上传资产', onClick: () => handleNavigate('/upload-resource') },
-        { key: 'dashboard', icon: <DashboardOutlined />, label: '资产归档', onClick: () => handleNavigate('/dashboard') },
+        { key: 'upload', icon: <UploadOutlined />, label: '新增资产', onClick: () => handleNavigate('/upload-resource') },
+        { key: 'dashboard', icon: <DashboardOutlined />, label: '资产列表', onClick: () => handleNavigate('/dashboard') },
+        { key: 'asset-detail', icon: <CheckCircleOutlined />, label: '资产详情', onClick: () => handleNavigate('/asset-detail/?id=1') },
         { key: 'version-record', icon: <CheckCircleOutlined />, label: '版本存证记录', onClick: () => handleNavigate('/version-record') }
       ]
     },
@@ -139,6 +142,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/upload-resource" element={<UploadResource />} />
             <Route path="/infringement" element={<InfringementCheck />} />
+            <Route path="/asset-detail" element={<AssetDetail />} />
             <Route path="/risk" element={<RiskMonitoring />} />
             <Route path="/version-record" element={<div>版本存证记录页面</div>} />
             <Route path="/compliance-alert" element={<div>合规性预警页面</div>} />

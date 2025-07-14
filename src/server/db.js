@@ -37,6 +37,20 @@ function initResourceTable() {
       user_id INTEGER NOT NULL,
       resource_type TEXT NOT NULL,
       authorization_status TEXT DEFAULT '未授权',
+      asset_name TEXT,
+      asset_no TEXT,
+      project TEXT,
+      asset_level TEXT,
+      creation_date TEXT,
+      declarant TEXT,
+      creation_type TEXT,
+      creator TEXT,
+      trademark_reg_no TEXT,
+      certificate_no TEXT,
+      certificate_platform TEXT,
+      certificate_timestamp TEXT,
+      file_hash TEXT,
+      verify_url TEXT,
       FOREIGN KEY(user_id) REFERENCES users(id)
     );
   `;
@@ -74,7 +88,54 @@ function initResourceTable() {
     );
   }
 
+  // 检查并添加新字段
+  function checkAndAddNewColumns() {
+    // 检查并添加基础信息字段
+    const newColumns = [
+      { name: 'asset_name', type: 'TEXT' },
+      { name: 'asset_no', type: 'TEXT' },
+      { name: 'project', type: 'TEXT' },
+      { name: 'asset_level', type: 'TEXT' },
+      { name: 'creation_date', type: 'TEXT' },
+      { name: 'declarant', type: 'TEXT' },
+      { name: 'creation_type', type: 'TEXT' },
+      { name: 'creator', type: 'TEXT' },
+      { name: 'trademark_reg_no', type: 'TEXT' },
+      { name: 'certificate_no', type: 'TEXT' },
+      { name: 'certificate_platform', type: 'TEXT' },
+      { name: 'certificate_timestamp', type: 'TEXT' },
+      { name: 'file_hash', type: 'TEXT' },
+      { name: 'verify_url', type: 'TEXT' }
+    ];
+
+    newColumns.forEach(column => {
+      db.get(
+        `SELECT name FROM pragma_table_info('resources') WHERE name = ?`,
+        [column.name],
+        (err, row) => {
+          if (err) {
+            console.error(`检查${column.name}列错误:`, err.message);
+            return;
+          }
+          if (!row) {
+            db.run(
+              `ALTER TABLE resources ADD COLUMN ${column.name} ${column.type}`,
+              (alterErr) => {
+                if (alterErr) {
+                  console.error(`添加${column.name}列错误:`, alterErr.message);
+                } else {
+                  console.log(`成功添加${column.name}列`);
+                }
+              }
+            );
+          }
+        }
+      );
+    });
+  }
+
   checkAndAddAuthorizationColumn();
+  checkAndAddNewColumns();
 }
 
 // 初始化任务表
