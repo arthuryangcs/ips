@@ -6,7 +6,9 @@ const db = require('./db');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3');
+const sqlite3 = require('sqlite3').verbose();
+const util = require('util');
+const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { v4: uuidv4 } = require('uuid');
 const { exec } = require('child_process');
@@ -182,42 +184,100 @@ app.get('/api/resources/summary', (req, res) => {
 });
 
 // 获取资产列表接口
-app.get('/api/resources', (req, res) => {
-  // 不需要登录
-  // const userInfo = req.query.userInfo ? JSON.parse(req.query.userInfo) : null;
-  // if (!userInfo || !userInfo.id) {
-  //   return res.status(401).json({ message: '用户未登录' });
-  // }
+app.get('/api/resources', async (req, res) => {
+  try {
+    const { userInfo, searchKeyword, filters } = req.query;
+    const parsedUserInfo = JSON.parse(userInfo);
+    const parsedFilters = filters ? JSON.parse(filters) : {};
 
-  db.all('SELECT id, resource_type, filename, file_type, uploaded_at, authorization_status, asset_name, asset_no, project FROM resources ORDER BY uploaded_at DESC', [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ message: '获取资产失败', error: err.message });
+    let query = 'SELECT * FROM resources WHERE user_id = ?';
+    const params = [parsedUserInfo.id];
+    let conditionIndex = 1;
+
+    // 搜索关键词筛选
+    if (searchKeyword) {
+      query += ` AND (asset_name LIKE ? OR asset_no LIKE ?)`;
+      params.push(`%${searchKeyword}%`, `%${searchKeyword}%`);
     }
+
+    // 项目筛选
+    if (parsedFilters.project) {
+      query += ` AND project = ?`;
+      params.push(parsedFilters.project);
+    }
+
+    // 类型筛选
+    if (parsedFilters.type) {
+      query += ` AND resource_type = ?`;
+      params.push(parsedFilters.type);
+    }
+
+    // 资产级别筛选
+    if (parsedFilters.assetLevel) {
+      query += ` AND asset_level = ?`;
+      params.push(parsedFilters.assetLevel);
+    }
+
+    // 状态筛选
+    // if (parsedFilters.status) {
+    //   query += ` AND status = ?`;
+    //   params.push(parsedFilters.status);
+    // }
+
+    // 申报时间筛选
+    // if (parsedFilters.declarationDate && parsedFilters.declarationDate[0] && parsedFilters.declarationDate[1]) {
+    //   query += ` AND creation_date BETWEEN ? AND ?`;
+    //   params.push(parsedFilters.declarationDate[0], parsedFilters.declarationDate[1]);
+    // }
+
+    query += ' order by id desc'
+
+    // 使用promisify转换db.all为Promise接口
+    const dbAll = util.promisify(db.all).bind(db);
+    const rows = await dbAll(query, params);
     res.json(rows);
-  });
+  } catch (error) {
+    console.error('获取资源失败:', error);
+    res.status(500).json({ message: '获取资源失败' });
+  }
 });
 
+// 获取资源文件内容接口
 app.get('/api/resources/:id/content', async (req, res) => {
+  const { id } = req.params;
   try {
-    const { id } = req.params;
-    db.get('SELECT file_path FROM resources WHERE id = ?', [id], (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' });
-      }
-      if (!row) {
-        return res.status(404).json({ error: 'Resource not found' });
-      }
-      // 确保路径正确解析
-      const filePath = path.resolve(row.file_path);
-      fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-          return res.status(500).json({ error: 'File read error', details: err.message });
-        }
-        res.json({ content: data });
+    // 查询文件路径
+    const asset = await new Promise((resolve, reject) => {
+      db.get('SELECT file_path, filename, file_type FROM resources WHERE id = ?', [id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
       });
     });
+
+    if (!asset) {
+      return res.status(404).json({ message: '文件不存在' });
+    }
+
+    const filePath = asset.file_path;
+    const fileName = asset.filename;
+    const fileType = asset.file_type;
+
+    // 检查文件是否存在
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: '文件不存在于服务器' });
+    }
+
+    // 设置响应头
+    res.setHeader('Content-Type', fileType);
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
+
+    // 读取文件并返回
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+
   } catch (error) {
-    res.status(500).json({ error: 'Server error', details: error.message });
+    console.error('获取文件内容失败:', error);
+    res.status(500).json({ message: '获取文件内容失败' });
   }
 });
 
@@ -433,9 +493,8 @@ app.post('/api/assets/create', upload.array('files', 10), (req, res) => {  // �
 
   // 生成存证信息
   const certificateNo = `IPS-${Date.now()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
-  const fileHash = require('crypto').createHash('sha256')
-    .update(JSON.stringify(files.map(f => f.originalname + f.size)) + Date.now())
-    .digest('hex');
+  // 随机生成32位文件哈希
+  const fileHash = crypto.randomBytes(16).toString('hex');
   const certificateTimestamp = new Date().toISOString();
   const certificatePlatform = 'IPS-存证平台';
   const verifyUrl = `http://localhost:5001/verify/${certificateNo}`;
@@ -559,26 +618,79 @@ app.get('/api/resources/:id', async (req, res) => {
       declaration_date: asset.declaration_date,
       reviewer: asset.reviewer || '系统自动审核',
       review_date: asset.review_date,
+      filename: asset.filename,
+      file_type: asset.file_type,
+      file_url: `/api/resources/${id}/content`,
+      is_image: isImage,
+      file_hash: asset.file_hash,
       versions: versions.map(version => ({
-        version: version.version_number,
+        id: version.id,
+        asset_name: version.asset_name,
         asset_no: version.asset_no,
         certificate_no: version.certificate_no,
+        resource_type: version.resource_type,
+        asset_level: version.asset_level,
+        project: version.project,
+        status: version.authorization_status,
+        in_use: version.in_use === 1,
+        external_authorization: version.external_authorization === 1,
         creator: version.creator,
-        completion_date: version.completion_date,
-        rights_ownership: version.rights_ownership,
-        description: version.description,
+        completion_date: version.creation_date,
+        rights_ownership: version.rights_ownership || '公司自有',
         declarant: version.declarant,
         declaration_date: version.declaration_date,
-        reviewer: version.reviewer,
-        review_date: version.review_date
+        reviewer: version.reviewer || '系统自动审核',
+        review_date: version.review_date,
+        filename: version.filename,
+        file_type: version.file_type,
+        file_url: `/api/resources/${version.id}/content`,
+        is_image: isImage,
+        file_hash: version.file_hash,
       })),
-      file_url: `/api/resources/${id}/content`,
-      is_image: isImage
     };
 
     res.json(assetDetail);
   } catch (error) {
     console.error('获取资产详情失败:', error);
     res.status(500).json({ message: '获取资产详情失败' });
+  }
+});
+
+// 资源文件下载接口
+app.get('/api/resources/:id/download', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // 查询文件信息
+    const asset = await new Promise((resolve, reject) => {
+      db.get('SELECT file_path, filename, file_type FROM resources WHERE id = ?', [id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!asset) {
+      return res.status(404).json({ message: '文件不存在' });
+    }
+
+    const filePath = asset.file_path;
+    const fileName = asset.filename;
+    const fileType = asset.file_type;
+
+    // 检查文件是否存在
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: '文件不存在于服务器' });
+    }
+
+    // 设置下载响应头
+    res.setHeader('Content-Type', fileType);
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
+
+    // 流式传输文件
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+
+  } catch (error) {
+    console.error('文件下载失败:', error);
+    res.status(500).json({ message: '文件下载失败' });
   }
 });

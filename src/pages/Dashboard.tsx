@@ -1,20 +1,19 @@
 import React from 'react';
-import { Layout, theme, Typography, Spin, message, Button, Modal, Input, Row, Col, Card } from 'antd';
+import { Layout, theme, Typography, Spin, message, Button, Modal, Input, Row, Col, Card, Select, DatePicker } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import UploadResource from './UploadResource';
-import DOMPurify from 'dompurify';
 import { SearchOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 
 interface Resource {
   id: number;
+  asset_name: string;
   filename: string;
+  file_url: string;
   file_type: string;
   uploaded_at: string;
   resource_type: string;
   authorization_status: string;
-  asset_name: string;
   asset_no: string;
   project: string;
   asset_level: string;
@@ -55,7 +54,11 @@ const Dashboard: React.FC = () => {
     try {
       setLoading(true);
       const response = await axios.get('/api/resources', {
-        params: { userInfo: JSON.stringify(userInfo) }
+        params: {
+          userInfo: JSON.stringify(userInfo),
+          searchKeyword,
+          filters: JSON.stringify(filters)
+        }
       });
       setResources(response.data);
     } catch (error: any) {
@@ -67,17 +70,36 @@ const Dashboard: React.FC = () => {
 
   React.useEffect(() => {
     fetchResources();
-  }, []);
+  }, [filters, searchKeyword]);
 
   // 筛选资产
   const filteredResources = React.useMemo(() => {
     return resources.filter(resource => {
-      // 仅保留搜索关键词筛选
-      return searchKeyword === '' || 
+      // 关键词筛选
+      const matchesKeyword = searchKeyword === '' || 
         resource.asset_name.toLowerCase().includes(searchKeyword.toLowerCase()) || 
         resource.asset_no.toLowerCase().includes(searchKeyword.toLowerCase());
+      
+      // 项目筛选
+      const matchesProject = filters.project === '' || resource.project === filters.project;
+      
+      // 类型筛选
+      const matchesType = filters.type === '' || resource.resource_type === filters.type;
+      
+      // 资产级别筛选
+      const matchesAssetLevel = filters.assetLevel === '' || resource.asset_level === filters.assetLevel;
+      
+      // 状态筛选
+      // const matchesStatus = filters.status === '' || resource.status === filters.status;
+      
+      // 申报时间筛选
+      // const matchesDate = !filters.declarationDate[0] || !filters.declarationDate[1] || 
+      //   (dayjs(resource.declaration_date).isAfter(filters.declarationDate[0]!) && 
+      //    dayjs(resource.declaration_date).isBefore(filters.declarationDate[1]!));
+      
+      return matchesKeyword && matchesProject && matchesType && matchesAssetLevel;
     });
-  }, [resources, searchKeyword]);
+  }, [resources, searchKeyword, filters]);
 
   const handleLogout = () => {
     localStorage.removeItem('userInfo');
@@ -87,24 +109,25 @@ const Dashboard: React.FC = () => {
   const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
 
   const handleViewFile = async (id: number, filename: string) => {
-    try {
-      setLoadingContent(true);
-      const isImage = /\.(jpg|jpeg|png|gif|bmp)$/i.test(filename);
+    navigate(`/asset-detail/?id=${id}`);
+    // try {
+    //   setLoadingContent(true);
+    //   const isImage = /\.(jpg|jpeg|png|gif|bmp)$/i.test(filename);
       
-      if (isImage) {
-        setFileContent(`/api/resources/${id}/content`);
-      } else {
-        const response = await axios.get(`/api/resources/${id}/content`);
-        const sanitizedContent = DOMPurify.sanitize(response.data.content);
-        setFileContent(sanitizedContent);
-      }
-      setIsImageFile(isImage);
-      setIsModalVisible(true);
-    } catch (error) {
-      messageApi.error('获取文件内容失败');
-    } finally {
-      setLoadingContent(false);
-    }
+    //   if (isImage) {
+    //     setFileContent(`/api/resources/${id}/content`);
+    //   } else {
+    //     const response = await axios.get(`/api/resources/${id}/content`);
+    //     const sanitizedContent = DOMPurify.sanitize(response.data.content);
+    //     setFileContent(sanitizedContent);
+    //   }
+    //   setIsImageFile(isImage);
+    //   setIsModalVisible(true);
+    // } catch (error) {
+    //   messageApi.error('获取文件内容失败');
+    // } finally {
+    //   setLoadingContent(false);
+    // }
   };
 
   const handleViewDetail = (id: number) => {
@@ -143,6 +166,13 @@ const Dashboard: React.FC = () => {
     });
   };
 
+  // 提取文件扩展名的辅助函数
+  const getExtension = (filename: string): string => {
+    if (!filename) return '';
+    const parts = filename.split('.');
+    return parts.length > 1 ? parts.pop()!.toLowerCase() : '';
+  };
+
   return (
       <Content style={{ margin: '24px 16px 0', overflow: 'auto' }}>
         {contextHolder}
@@ -165,6 +195,59 @@ const Dashboard: React.FC = () => {
             prefix={<SearchOutlined />}
           />
 
+          {/* 筛选条件区域 */}
+          <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+            {/* 项目筛选 */}
+            <Col xs={24} sm={12} md={8} lg={4}>
+              <Select
+                placeholder="选择项目"
+                value={filters.project}
+                onChange={value => setFilters({...filters, project: value})}
+                style={{ width: '100%' }}
+                options={[
+                  { value: '', label: '全部项目' },
+                  { value: '王者荣耀', label: '王者荣耀' },
+                  { value: '最终幻想', label: '最终幻想' },
+                  { value: '使命召唤', label: '使命召唤' }
+                ]}
+              />
+            </Col>
+
+            {/* 类型筛选 */}
+            <Col xs={24} sm={12} md={8} lg={4}>
+              <Select
+                placeholder="选择类型"
+                value={filters.type}
+                onChange={value => setFilters({...filters, type: value})}
+                style={{ width: '100%' }}
+                options={[
+                  { value: '', label: '全部类型' },
+                  { label: '角色美术', value: 'character_art' },
+                  { label: '商标', value: 'trademark' },
+                  { label: '代码', value: 'code' },
+                  { label: '图片', value: 'image' },
+                  { label: '字体', value: 'font' },
+                ]}
+              />
+            </Col>
+
+            {/* 资产级别筛选 */}
+            <Col xs={24} sm={12} md={8} lg={4}>
+              <Select
+                placeholder="选择资产级别"
+                value={filters.assetLevel}
+                onChange={value => setFilters({...filters, assetLevel: value})}
+                style={{ width: '100%' }}
+                options={[
+                  { value: '', label: '全部级别' },
+                  { label: '常规', value: 'regular' },
+                  { label: '重要', value: 'important' },
+                  { label: '核心', value: 'core' },
+                ]}
+              />
+            </Col>
+          </Row>
+
           {loading ? (
             <Spin size="large" style={{ display: 'block', margin: '50px auto' }} />
           ) : filteredResources.length === 0 ? (
@@ -184,7 +267,7 @@ const Dashboard: React.FC = () => {
                     <div
                       style={{
                         height: 160,
-                        backgroundColor: '#ffccd5',
+                        // backgroundColor: '#ffccd5',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -200,7 +283,15 @@ const Dashboard: React.FC = () => {
                           style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                         />
                       ) : (
-                        <div style={{ fontSize: 24, color: '#333' }}>资产图示</div>
+                        <div className="asset-thumbnail">
+                          {resource.resource_type === 'code' ? (
+                            <img src="/code.png" alt="代码资源" className="code-thumbnail" />
+                          // ) : resource.file_type.includes('image') ? (
+                          //   <img src={resource.file_url} alt={resource.asset_name} />
+                          ) : (
+                            <div className="file-icon">{getExtension(resource.filename)}</div>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div style={{ flexGrow: 1 }}>

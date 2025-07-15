@@ -34,8 +34,9 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // 确定当前选中的菜单项
   const getSelectedKey = () => {
     if (currentPath === '/') return 'home';
-    if (currentPath === '/dashboard') return 'dashboard';
     if (currentPath === '/upload-resource') return 'upload';
+    if (currentPath === '/dashboard') return 'dashboard';
+    if (currentPath.includes('/asset-detail')) return 'dashboard';
     if (currentPath === '/infringement') return 'infringement';
     if (currentPath === '/risk') return 'risk';
     if (currentPath === '/version-record') return 'version-record';
@@ -43,7 +44,6 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (currentPath === '/image-comparison') return 'image-comparison';
     if (currentPath === '/code-comparison') return 'code-comparison';
     if (currentPath === '/login') return 'login';
-    if (currentPath.includes('/asset-detail')) return 'asset-detail';
     return 'home';
   };
 
@@ -61,8 +61,8 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       children: [
         { key: 'upload', icon: <UploadOutlined />, label: '新增资产', onClick: () => handleNavigate('/upload-resource') },
         { key: 'dashboard', icon: <DashboardOutlined />, label: '资产列表', onClick: () => handleNavigate('/dashboard') },
-        { key: 'asset-detail', icon: <CheckCircleOutlined />, label: '资产详情', onClick: () => handleNavigate('/asset-detail/?id=1') },
-        { key: 'version-record', icon: <CheckCircleOutlined />, label: '版本存证记录', onClick: () => handleNavigate('/version-record') }
+        // { key: 'asset-detail', icon: <CheckCircleOutlined />, label: '资产详情', onClick: () => handleNavigate('/asset-detail/?id=1') },
+        // { key: 'version-record', icon: <CheckCircleOutlined />, label: '版本存证记录', onClick: () => handleNavigate('/version-record') }
       ]
     },
     {
@@ -108,7 +108,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       >
         <div style={{ display: 'flex', alignItems: 'center', margin: '16px' }}>
           <img src={logo} alt="Logo" style={{ height: '32px', marginRight: '8px' }} />
-          <h1 style={{ color: '#fff', fontSize: '1.2rem', margin: 0 }}>企业IP数字化管理平台</h1>
+          <h1 style={{ color: '#fff', fontSize: '1.2rem', margin: 0 }}>游戏IP数字化管理平台</h1>
         </div>
         <Menu
           theme="dark"
@@ -124,7 +124,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             {children}
           </div>
         </Content>
-        <Footer style={{ textAlign: 'center' }}>企业IP数字化管理平台 ©{new Date().getFullYear()}</Footer>
+        <Footer style={{ textAlign: 'center' }}>游戏IP数字化管理平台 ©{new Date().getFullYear()}</Footer>
       </Layout>
     </Layout>
   );
