@@ -42,8 +42,6 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (currentPath.includes('/asset-detail')) return 'dashboard';
     if (currentPath === '/infringement') return 'infringement';
     if (currentPath === '/risk') return 'risk';
-    if (currentPath === '/version-record') return 'version-record';
-    if (currentPath === '/compliance-alert') return 'compliance-alert';
     if (currentPath === '/image-comparison') return 'image-comparison';
     if (currentPath === '/code-comparison') return 'code-comparison';
     if (currentPath === '/external-infringement') return 'external-infringement';
@@ -66,7 +64,6 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         { key: 'upload', icon: <UploadOutlined />, label: '新增资产', onClick: () => handleNavigate('/upload-resource') },
         { key: 'dashboard', icon: <DashboardOutlined />, label: '资产列表', onClick: () => handleNavigate('/dashboard') },
         // { key: 'asset-detail', icon: <CheckCircleOutlined />, label: '资产详情', onClick: () => handleNavigate('/asset-detail/?id=1') },
-        // { key: 'version-record', icon: <CheckCircleOutlined />, label: '版本存证记录', onClick: () => handleNavigate('/version-record') }
       ]
     },
     {
@@ -76,7 +73,6 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       children: [
         { key: 'infringement', icon: <CheckCircleOutlined />, label: '侵权风险扫描', onClick: () => handleNavigate('/infringement') },
         { key: 'risk', icon: <AlertOutlined />, label: '权属健康监测', onClick: () => handleNavigate('/risk') },
-        { key: 'compliance-alert', icon: <AlertOutlined />, label: '合规性预警', onClick: () => handleNavigate('/compliance-alert') },
         { key: 'external-infringement', icon: <AlertOutlined />, label: '外部侵权检测', onClick: () => handleNavigate('/external-infringement') },
         { key: 'image-comparison', icon: <PictureOutlined />, label: '图片检测', onClick: () => handleNavigate('/image-comparison') },
         { key: 'code-comparison', icon: <CodeOutlined />, label: '代码检测', onClick: () => handleNavigate('/code-comparison') }
@@ -170,8 +166,6 @@ function App() {
             <Route path="/infringement" element={<InfringementCheck />} />
             <Route path="/asset-detail" element={<AssetDetail />} />
             <Route path="/risk" element={<RiskMonitoring />} />
-            <Route path="/version-record" element={<div>版本存证记录页面</div>} />
-            <Route path="/compliance-alert" element={<div>合规性预警页面</div>} />
             <Route path="/image-comparison" element={<ImageComparison />} />
             <Route path="/code-comparison" element={<CodeComparison />} />
             <Route path="/external-infringement" element={<ExternalInfringementCheck />} />

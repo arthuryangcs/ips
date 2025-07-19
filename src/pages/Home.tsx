@@ -4,12 +4,22 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 
+interface ResourceDistributionItem {
+  type: string;
+  value: number;
+}
+
 const { Content } = Layout;
 const { Title, Paragraph, Text } = Typography;
 
 const Home: React.FC = () => {
   const [messageApi, contextHolder] = message.useMessage();
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<any>({
+    resourceDistribution: [],
+    riskScanData: [],
+    scannedResources: [],
+    announcements: []
+  });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -41,10 +51,10 @@ const Home: React.FC = () => {
             { date: '2021-03-16', value: 28000 },
           ],
           scannedResources: [
-            { id: 1, name: '小美要赶回家原型图', health: 250, riskPoints: 2 },
-            { id: 2, name: '小美的原型图跑到哪儿了', health: 250, riskPoints: 4 },
-            { id: 3, name: '小美今天周四了快点吧', health: 250, riskPoints: 100 },
-            { id: 4, name: '小美你可长点心吧', health: 250, riskPoints: 5 },
+            { id: 1, name: '小关要赶回家原型图', health: 250, riskPoints: 2 },
+            { id: 2, name: '小关的原型图跑到哪儿了', health: 250, riskPoints: 4 },
+            { id: 3, name: '小关今天周四了快点吧', health: 250, riskPoints: 100 },
+            { id: 4, name: '小关你可长点心吧', health: 250, riskPoints: 5 },
             { id: 5, name: '最后一个不知道写啥了', health: 250, riskPoints: 9 },
           ],
           resourceDistribution: [
@@ -152,17 +162,86 @@ const Home: React.FC = () => {
         <Row gutter={[12, 12]}>
           <Content style={{ padding: '0 0px', marginTop: 12 }}>
             <div style={{ background: '#fff', padding: 12 }}>
-              <Card title="风险扫描 (近7日)">
+              <Card title="风险扫描 (近7日)"
+              >
               <Line
                 data={dashboardData.riskScanData}
                 xField="date"
                 yField="value"
+                shapeField={"smooth"}
                 smooth={true}
+                style={{
+                  lineWidth: 2,
+                }}
+                height={300}
                 interactions={[{
                   type: 'tooltip',
                 }]}
               />
             </Card>
+            </div>
+          </Content>
+        </Row>
+        <Row gutter={[12, 12]}>
+          <Content style={{ padding: '0 0px', marginTop: 12 }}>
+            <div style={{ background: '#fff', padding: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <Card title="已扫描资源清单">
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                    <span style={{ padding: '4px 8px', backgroundColor: '#e6f7ff', color: '#1890ff', borderRadius: 4 }}>图文</span>
+                    <span style={{ padding: '4px 8px', cursor: 'pointer' }}>代码</span>
+                    <span style={{ padding: '4px 8px', cursor: 'pointer' }}>视频</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 80px 80px', gap: 8, fontSize: 14, padding: '8px 0', borderBottom: '1px solid #e8e8e8', fontWeight: 'bold' }}>
+                    <div>编号</div>
+                    <div>资源包名称</div>
+                    <div>健康度</div>
+                    <div>风险点</div>
+                  </div>
+                  {dashboardData.scannedResources.map((item: any, index: number) => (
+                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '60px 1fr 80px 80px', gap: 8, fontSize: 14, padding: '12px 0', borderBottom: '1px solid #e8e8e8', alignItems: 'center' }}>
+                      <div>{item.id}</div>
+                      <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                      <div>{item.health}</div>
+                      <div style={{ color: item.riskPoints > 5 ? '#f5222d' : '#faad14', display: 'flex', alignItems: 'center' }}>
+                        {item.riskPoints} <span style={{ marginLeft: 4 }}>▲</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ color: '#1890ff', cursor: 'pointer', fontSize: 14 }}>查看更多</span>
+                </div>
+              </Card>
+              <Card title="资源库占比">
+                {dashboardData.resourceDistribution.length > 0 && (
+                  <Pie
+                    data={dashboardData.resourceDistribution}
+                    innerRadius={0.5}
+                    angleField="value"
+                    colorField="type"
+                    radius={0.8}
+                    height={300}
+                    label={{
+                      position: 'inside',
+                      formatter: (datum?: ResourceDistributionItem) => datum?.type && datum?.value !== undefined ? `${datum.type} ${datum.value}%` : '',
+                    }}
+                    interactions={[
+                      {
+                        type: 'element-active',
+                      },
+                    ]}
+                  />
+                )}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginTop: 16 }}>
+                  {dashboardData.resourceDistribution.map((item: any, index: number) => (
+                    <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
+                      <div style={{ width: 12, height: 12, backgroundColor: index === 0 ? '#1890ff' : index === 1 ? '#52c41a' : '#fa8c16', marginRight: 8, borderRadius: 2 }}></div>
+                      <div style={{ fontSize: 14 }}>{item.type} {item.value}%</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </div>
           </Content>
         </Row>
@@ -235,7 +314,7 @@ const Home: React.FC = () => {
                     <div style={{ display: 'inline-block', padding: '2px 8px', marginRight: 8, borderRadius: 4, backgroundColor: announcement.type === '预警' ? '#fff1f0' : announcement.type === '通知' ? '#e6f7ff' : '#fffbe6', color: announcement.type === '预警' ? '#f5222d' : announcement.type === '通知' ? '#1890ff' : '#faad14' }}>
                       {announcement.type}
                     </div>
-                    <div style={{ padding: '2px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', flex: 1 }}>
+                    <div style={{ padding: '2px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', flex: 1 , height: 20}}>
                     {announcement.content}
                     </div>
                   </div>

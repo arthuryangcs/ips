@@ -1,10 +1,8 @@
 import React from 'react';
-import { Form, Input, Button, Card, Layout, message } from 'antd';
+import { Form, Input, Card, Statistic, Row, Col, Spin, message, Layout, Typography, Button, Divider } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-const { Content } = Layout;
 
 const Login: React.FC = () => {
   const [messageApi, contextHolder] = message.useMessage();
@@ -45,9 +43,9 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Content style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f0f2f5', padding: '24px' }}>
-        <Card title="用户登录" style={{ width: 360 }}>
+    <div style={{ minHeight: '100vh', backgroundImage: 'url(/login_bg.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', justifyContent: 'flex-end', padding: '10px' }}>
+      <Row gutter={[16, 16]}>
+      <Card title="用户登录" style={{ width: 800, height: 270, marginTop: 90, marginRight: 20}}>
           {contextHolder}
           <Form
             name="normal_login"
@@ -82,9 +80,9 @@ const Login: React.FC = () => {
             </Form.Item>
           </Form>
         </Card>
-      </Content>
-    </Layout>
-  );
+      </Row>
+    </div>
+);
 };
 
 export default Login;
