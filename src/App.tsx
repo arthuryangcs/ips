@@ -57,10 +57,10 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // 动态生成菜单项
   const baseItems = [
-    { key: 'home', icon: <HomeOutlined />, label: '首页', onClick: () => handleNavigate('/') },
+    { key: 'home', icon: <DashboardOutlined />, label: '仪表盘', onClick: () => handleNavigate('/') },
     {
       key: 'ip-library',
-      icon: <DashboardOutlined />,
+      icon: <CheckCircleOutlined />,
       label: 'IP资产档案库',
       children: [
         { key: 'upload', icon: <UploadOutlined />, label: '新增资产', onClick: () => handleNavigate('/upload-resource') },
@@ -144,7 +144,11 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         />
       </Sider>
       <Layout>
-        {children}
+        <Content style={{ padding: 0 }}>
+          {/* <div style={{ background: '#fff', padding: 24, minHeight: 'calc(100vh - 64px)' }}> */}
+            {children}
+          {/* </div> */}
+        </Content>
         <Footer style={{ textAlign: 'center' }}>游戏IP数字化管理平台 ©{new Date().getFullYear()}</Footer>
       </Layout>
     </Layout>
