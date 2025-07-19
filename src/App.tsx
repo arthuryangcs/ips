@@ -1,7 +1,8 @@
 import React from 'react';
-import { App as AntdApp, Layout, Menu } from 'antd';
+import { App as AntdApp, Layout, Typography, Menu, theme } from 'antd';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { HomeOutlined, DashboardOutlined, UploadOutlined, LoginOutlined, LogoutOutlined, CheckCircleOutlined, AlertOutlined, PictureOutlined, CodeOutlined} from '@ant-design/icons';
+import { SearchOutlined, BellOutlined, UserOutlined } from '@ant-design/icons';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -14,8 +15,10 @@ import './App.css';
 import logo from './logo.svg';
 import InfringementCheck from './pages/InfringementCheck';
 import RiskMonitoring from './pages/RiskMonitoring';
+import ExternalInfringementCheck from './pages/ExternalInfringementCheck';
 
-const { Sider, Content, Footer } = Layout;
+const { Title, Paragraph, Text } = Typography;
+const { Sider, Content, Footer, Header } = Layout;
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -43,6 +46,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (currentPath === '/compliance-alert') return 'compliance-alert';
     if (currentPath === '/image-comparison') return 'image-comparison';
     if (currentPath === '/code-comparison') return 'code-comparison';
+    if (currentPath === '/external-infringement') return 'external-infringement';
     if (currentPath === '/login') return 'login';
     return 'home';
   };
@@ -73,11 +77,16 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         { key: 'infringement', icon: <CheckCircleOutlined />, label: '侵权风险扫描', onClick: () => handleNavigate('/infringement') },
         { key: 'risk', icon: <AlertOutlined />, label: '权属健康监测', onClick: () => handleNavigate('/risk') },
         { key: 'compliance-alert', icon: <AlertOutlined />, label: '合规性预警', onClick: () => handleNavigate('/compliance-alert') },
+        { key: 'external-infringement', icon: <AlertOutlined />, label: '外部侵权检测', onClick: () => handleNavigate('/external-infringement') },
         { key: 'image-comparison', icon: <PictureOutlined />, label: '图片检测', onClick: () => handleNavigate('/image-comparison') },
         { key: 'code-comparison', icon: <CodeOutlined />, label: '代码检测', onClick: () => handleNavigate('/code-comparison') }
       ]
     }
   ];
+
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
 
   const items = [...baseItems];
   if (isLoggedIn) {
@@ -99,19 +108,35 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
 
   return (
+    <Layout>
+        <Header style={{ height: '64px', padding: 8, background: colorBgContainer }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px', height: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <img src={logo} alt="Logo" style={{ height: '32px', marginRight: '16px' }} />
+              <h1 style={{ fontSize: '24px', margin: 0 }}>游戏知识产权管理平台</h1>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <SearchOutlined style={{ fontSize: '18px' }} />
+              <BellOutlined style={{ fontSize: '18px' }} />
+              {isLoggedIn ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <UserOutlined style={{ fontSize: '18px'}} />
+                  <span>{JSON.parse(userInfo || '{}').username || '用户'}</span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </Header>
     <Layout style={{ minHeight: '100vh' }}>
       <Sider
         breakpoint="lg"
         collapsedWidth="0"
         onBreakpoint={(broken) => console.log(broken)}
         onCollapse={(collapsed, type) => console.log(collapsed, type)}
+        theme="light"
       >
-        <div style={{ display: 'flex', alignItems: 'center', margin: '16px' }}>
-          <img src={logo} alt="Logo" style={{ height: '32px', marginRight: '8px' }} />
-          <h1 style={{ color: '#fff', fontSize: '1.2rem', margin: 0 }}>游戏IP数字化管理平台</h1>
-        </div>
         <Menu
-          theme="dark"
+          theme="light"
           mode="inline"
           selectedKeys={[getSelectedKey()]}
           items={items}
@@ -119,13 +144,10 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         />
       </Sider>
       <Layout>
-        <Content style={{ padding: '0 24px', marginTop: 24 }}>
-          <div style={{ background: '#fff', padding: 24, minHeight: 'calc(100vh - 64px)' }}>
-            {children}
-          </div>
-        </Content>
+        {children}
         <Footer style={{ textAlign: 'center' }}>游戏IP数字化管理平台 ©{new Date().getFullYear()}</Footer>
       </Layout>
+    </Layout>
     </Layout>
   );
 };
@@ -148,6 +170,7 @@ function App() {
             <Route path="/compliance-alert" element={<div>合规性预警页面</div>} />
             <Route path="/image-comparison" element={<ImageComparison />} />
             <Route path="/code-comparison" element={<CodeComparison />} />
+            <Route path="/external-infringement" element={<ExternalInfringementCheck />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AppLayout>

@@ -1,7 +1,7 @@
 import { Layout, Typography, Spin, Card, Collapse, Row, Col, Button, message, Image, Divider } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { DownloadOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { DownloadOutlined, SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 
@@ -14,7 +14,6 @@ interface AssetVersion {
   id: number;
   asset_name: string;
   asset_no: string;
-  certificate_no: string;
   resource_type: string;
   filename: string;
   asset_level: string;
@@ -22,6 +21,9 @@ interface AssetVersion {
   status: string;
   in_use: boolean;
   external_authorization: boolean;
+  certificate_no: string;
+  certificate_platform: string;
+  certificate_timestamp: string;
   creator: string;
   completion_date: string;
   rights_ownership: string;
@@ -32,8 +34,6 @@ interface AssetVersion {
   versions: AssetVersion[];
   file_url: string;
   is_image: boolean;
-  notarization_platform: string;
-  notarization_time: string;
   file_hash: string;
 }
 
@@ -42,6 +42,8 @@ interface AssetDetail {
   asset_name: string;
   asset_no: string;
   certificate_no: string;
+  certificate_platform: string;
+  certificate_timestamp: string;
   resource_type: string;
   filename: string;
   asset_level: string;
@@ -59,8 +61,6 @@ interface AssetDetail {
   versions: AssetVersion[];
   file_url: string;
   is_image: boolean;
-  notarization_platform: string;
-  notarization_time: string;
   file_hash: string;
 }
 
@@ -73,6 +73,7 @@ const AssetDetail: React.FC = () => {
   const [asset, setAsset] = useState<AssetDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [certifying, setCertifying] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -116,6 +117,43 @@ const AssetDetail: React.FC = () => {
       console.error('下载失败:', error);
       messageApi.error('文件下载失败');
     }
+  };
+
+  const handleCertify = async () => {
+    if (!id) {
+      messageApi.error('获取资产ID失败');
+      return;
+    }
+
+    setCertifying(true);
+    try {
+      const response = await axios.post(`/api/resources/${id}/certify`);
+      if (response.data && response.data.success) {
+        // 更新资产信息
+        // const updatedAsset = response.data.asset;
+        // setAsset(updatedAsset);
+        try {
+          setLoading(true);
+          const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+          const response = await axios.get(`/api/resources/${id}`, {
+            params: { userInfo: JSON.stringify(userInfo) }
+          });
+          setAsset(response.data);
+        } catch (err: any) {
+          setError(err.response?.data?.message || '获取资产详情失败');
+          messageApi.error('获取资产详情失败');
+        } finally {
+        setLoading(false);
+      }
+        messageApi.success('资源存证成功');
+      } else {
+        messageApi.error(response.data?.message || '资源存证失败');
+      }
+    } catch (err) {
+      messageApi.error('网络错误，请重试');
+      console.error('Certify error:', err);
+    }
+    setCertifying(false);
   };
 
   if (loading) {
@@ -167,7 +205,12 @@ const AssetDetail: React.FC = () => {
                   <div className="file-icon">{getExtension(asset.filename)}</div>
                 ) }
             </div>
-            <Button type="primary" icon={<DownloadOutlined />} onClick={handleDownload} style={{ width: '100%' }}>下载资源</Button>
+            <Button type="primary" icon={<DownloadOutlined />} onClick={handleDownload} style={{ width: '100%', marginBottom: '10px' }}>下载资源</Button>
+            {asset?.certificate_no ? (
+              <Button type="primary" icon={<SaveOutlined />} onClick={handleCertify} loading={certifying} style={{ width: '100%' }}>更新存证</Button>
+            ) : (
+              <Button type="primary" icon={<SaveOutlined />} onClick={handleCertify} loading={certifying} style={{ width: '100%' }}>资源存证</Button>
+            )}
           </Col>
 
           <Col xs={24} md={18} lg={20}>
@@ -179,12 +222,13 @@ const AssetDetail: React.FC = () => {
                 <Paragraph><strong>创作人:</strong> {asset.creator}</Paragraph>
                 <Paragraph><strong>资产类型:</strong> {asset.resource_type}</Paragraph>
                 <Paragraph><strong>所属项目:</strong> {asset.project}</Paragraph>
-              </Col>
-              <Col xs={24} lg={14}>
                 <Paragraph><strong>资产申报人:</strong> {asset.declarant}</Paragraph>
                 <Paragraph><strong>申报日期:</strong> {dayjs(asset.declaration_date).format('YYYY-MM-DD')}</Paragraph>
+              </Col>
+              <Col xs={24} lg={14}>
                 <Paragraph><strong>存证编号:</strong> {asset.certificate_no}</Paragraph>
-                <Paragraph><strong>存证平台:</strong> 蚂蚁链司法凭证</Paragraph>
+                <Paragraph><strong>存证平台:</strong> {asset.certificate_platform}</Paragraph>
+<Paragraph><strong>存证时间:</strong> {asset.certificate_timestamp ? dayjs(asset.certificate_timestamp).format('YYYY-MM-DD HH:mm:ss') : '无'}</Paragraph>
                 <Paragraph><strong>文件哈希:</strong> {asset.file_hash ? asset.file_hash : '无'}</Paragraph>
               </Col>
             </Row>
@@ -205,7 +249,7 @@ const AssetDetail: React.FC = () => {
       <Card>
         <Title level={4}>版本历史</Title>
         <Collapse defaultActiveKey={['1']}>
-          {asset.versions.map((version, index) => (
+          {asset.versions && Array.isArray(asset.versions) && asset.versions.map((version, index) => (
             <Panel header={`版本: ${version.asset_no}`} key={index + 1}>
               <Row gutter={[16, 16]}>
                 <Col xs={24} md={8}>
@@ -214,12 +258,12 @@ const AssetDetail: React.FC = () => {
                   <Paragraph><strong>资产申报人:</strong> {version.declarant}</Paragraph>
                   <Paragraph><strong>资产审核人:</strong> {version.reviewer}</Paragraph>
                   <Paragraph><strong>审核入库日期:</strong> {dayjs(version.review_date).format('YYYY-MM-DD')}</Paragraph>
+                  <Paragraph><strong>申报日期:</strong> {dayjs(version.declaration_date).format('YYYY-MM-DD')}</Paragraph>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Paragraph><strong>资产申报人:</strong> {version.declarant}</Paragraph>
-                  <Paragraph><strong>申报日期:</strong> {dayjs(version.declaration_date).format('YYYY-MM-DD')}</Paragraph>
                   <Paragraph><strong>存证编号:</strong> {version.certificate_no}</Paragraph>
-                  <Paragraph><strong>存证平台:</strong> 蚂蚁链司法凭证</Paragraph>
+                <Paragraph><strong>存证平台:</strong> {version.certificate_platform}</Paragraph>
+<Paragraph><strong>存证时间:</strong> {version.certificate_timestamp ? dayjs(version.certificate_timestamp).format('YYYY-MM-DD HH:mm:ss') : '无'}</Paragraph>
                   <Paragraph><strong>文件哈希:</strong> {version.file_hash ? version.file_hash : '无'}</Paragraph>
                 </Col>
                 <Col xs={24} md={6} lg={4}>

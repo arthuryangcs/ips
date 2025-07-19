@@ -142,7 +142,7 @@ const Dashboard: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (!currentDeleteId) return;
     try {
-      await axios.delete(`http://localhost:5001/api/resources/${currentDeleteId}`);
+      await axios.delete(`http://localhost:4000/api/resources/${currentDeleteId}`);
       messageApi.success('删除成功');
       fetchResources();
       setIsDeleteModalVisible(false);

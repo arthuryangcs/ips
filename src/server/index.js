@@ -14,6 +14,9 @@ const { v4: uuidv4 } = require('uuid');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
+const cheerio = require('cheerio');
+const pdf = require('html-pdf');
+const axios = require('axios');
 
 // 确保上传目录存在
 const uploadDir = path.join(__dirname, '../resource');
@@ -40,7 +43,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 4000;
 
 // 中间件 - CORS必须放在所有路由之前
 app.use(cors({
@@ -281,6 +284,45 @@ app.get('/api/resources/:id/content', async (req, res) => {
   }
 });
 
+// 资源存证接口
+app.post('/api/resources/:id/certify', (req, res) => {
+  const { id } = req.params;
+  
+  // 生成存证编号
+  const certificateNo = 'CERT-' + Date.now().toString().slice(-8) + '-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  const notarizationTime = new Date().toISOString();
+  
+  // 更新资源信息
+  const updateQuery = `
+    UPDATE resources
+    SET certificate_no = ?,
+        certificate_timestamp = ?,
+        certificate_platform = '蚂蚁链司法凭证'
+    WHERE id = ?
+  `;
+  
+  db.run(updateQuery, [certificateNo, notarizationTime, id], function(err) {
+    if (err) {
+      console.error('资源存证失败:', err);
+      return res.status(500).json({ success: false, message: '资源存证失败' });
+    }
+    
+    // 查询更新后的资源信息
+    db.get('SELECT * FROM resources WHERE id = ?', [id], (err, row) => {
+      if (err) {
+        console.error('查询资源失败:', err);
+        return res.status(500).json({ success: false, message: '查询资源失败' });
+      }
+      
+      if (!row) {
+        return res.status(404).json({ success: false, message: '资源不存在' });
+      }
+      
+      res.json({ success: true, message: '资源存证成功', asset: row });
+    });
+  });
+});
+
 // 添加资产删除接口
 app.delete('/api/resources/:id', (req, res) => {
   const { id } = req.params;
@@ -497,7 +539,7 @@ app.post('/api/assets/create', upload.array('files', 10), (req, res) => {  // �
   const fileHash = crypto.randomBytes(16).toString('hex');
   const certificateTimestamp = new Date().toISOString();
   const certificatePlatform = 'IPS-存证平台';
-  const verifyUrl = `http://localhost:5001/verify/${certificateNo}`;
+  const verifyUrl = `http://localhost:4000/verify/${certificateNo}`;
 
   // 准备批量插入数据
   const insertPromises = files.map(file => {
@@ -528,9 +570,12 @@ app.post('/api/assets/create', upload.array('files', 10), (req, res) => {  // �
         assetInfo.creationType || '',
         assetInfo.creator || '',
         trademarkRegNo || '',
-        certificateNo,
-        certificatePlatform,
-        certificateTimestamp,
+        '',
+        '',
+        '',
+        // certificateNo,
+        // certificatePlatform,
+        // certificateTimestamp,
         fileHash,
         verifyUrl,
       ];
@@ -604,7 +649,6 @@ app.get('/api/resources/:id', async (req, res) => {
       id: asset.id,
       asset_name: asset.asset_name,
       asset_no: asset.asset_no,
-      certificate_no: asset.certificate_no,
       resource_type: asset.resource_type,
       asset_level: asset.asset_level,
       project: asset.project,
@@ -622,12 +666,17 @@ app.get('/api/resources/:id', async (req, res) => {
       file_type: asset.file_type,
       file_url: `/api/resources/${id}/content`,
       is_image: isImage,
+      certificate_no: asset.certificate_no,
+      certificate_platform: asset.certificate_platform,
+      certificate_timestamp: asset.certificate_timestamp,
       file_hash: asset.file_hash,
       versions: versions.map(version => ({
         id: version.id,
         asset_name: version.asset_name,
         asset_no: version.asset_no,
         certificate_no: version.certificate_no,
+        certificate_platform: version.certificate_platform,
+        certificate_timestamp: version.certificate_timestamp,
         resource_type: version.resource_type,
         asset_level: version.asset_level,
         project: version.project,
@@ -692,5 +741,164 @@ app.get('/api/resources/:id/download', async (req, res) => {
   } catch (error) {
     console.error('文件下载失败:', error);
     res.status(500).json({ message: '文件下载失败' });
+  }
+});
+
+// 外部侵权检测接口
+app.post('/api/check-external-url', async (req, res) => {
+  try {
+    const { url } = req.body;
+
+    // 1. 爬取外部URL内容
+    const response = await axios.get(url);
+    const html = response.data;
+    const $ = cheerio.load(html);
+    const textContent = $('body').text().trim();
+
+    // 2. 与内部库比对
+    // 这里是简化的比对逻辑，实际应用中可能需要更复杂的算法
+    const query = 'SELECT * FROM resources where file_type like ? LIMIT 10';
+    const resources = await promisify(db.all).bind(db)(query, '%image%');
+
+    const infringementEvidence = [];
+    let maxSimilarity = 0;
+
+    resources.forEach(resource => {
+      // 简化的相似度计算，实际应用中可能需要使用更复杂的算法
+      const similarity = Math.floor(Math.random() * 100);
+      if (similarity > 30) {
+        infringementEvidence.push({
+          assetName: resource.asset_name,
+          id: resource.id,
+          file_type: resource.file_type,
+          similarity
+        });
+
+        maxSimilarity = Math.max(maxSimilarity, similarity);
+      }
+    });
+
+    // 3. 确定风险级别
+    let riskLevel = '低';
+    let recommendation = '未发现明显侵权风险。';
+
+    if (maxSimilarity > 70) {
+      riskLevel = '高';
+      recommendation = '存在高度侵权风险。';
+    } else if (maxSimilarity > 40) {
+      riskLevel = '中';
+      recommendation = '存在中度侵权风险。';
+    }
+
+    // 4. 保存检测结果
+    const resultId = Date.now().toString();
+
+    res.json({
+      success: true,
+      result: {
+        id: resultId,
+        url,
+        riskLevel,
+        infringementEvidence,
+        recommendation
+      }
+    });
+  } catch (error) {
+    console.error('External infringement check error:', error);
+    res.status(500).json({
+      success: false,
+      message: '检测失败: ' + error.message
+    });
+  }
+});
+
+// 生成PDF报告接口
+app.post('/api/generate-report', async (req, res) => {
+  try {
+    const { resultId } = req.body;
+
+    // 这里简化处理，实际应用中可能需要从数据库中获取检测结果
+    // 为了演示，我们只是返回一个模拟的报告URL
+    const reportUrl = `http://localhost:${PORT}/api/report/${resultId}`;
+
+    res.json({
+      success: true,
+      reportUrl
+    });
+  } catch (error) {
+    console.error('Generate report error:', error);
+    res.status(500).json({
+      success: false,
+      message: '生成报告失败: ' + error.message
+    });
+  }
+});
+
+// 确保报告目录存在
+const reportDir = path.join(__dirname, 'reports');
+if (!fs.existsSync(reportDir)){
+  fs.mkdirSync(reportDir);
+}
+
+app.get('/api/report/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    // 模拟报告数据
+    const reportData = {
+      id: id,
+      title: '侵权检测报告',
+      date: new Date().toLocaleDateString(),
+      content: '这是一份详细的侵权检测报告内容...'
+    };
+
+    // 构建HTML模板
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>侵权检测报告</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h1 { color: #333; }
+          .report-content { margin-top: 20px; }
+          .report-info { margin-bottom: 10px; }
+        </style>
+      </head>
+      <body>
+        <h1>侵权检测报告</h1>
+        <div class="report-info">
+          <p>报告ID: ${reportData.id}</p>
+          <p>生成日期: ${reportData.date}</p>
+        </div>
+        <div class="report-content">
+          <p>${reportData.content}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // 生成PDF文件路径
+    const pdfPath = path.join(reportDir, `${id}.pdf`);
+
+    // 生成PDF
+    pdf.create(html).toFile(pdfPath, (err, result) => {
+      if (err) {
+        console.error('Generate PDF error:', err);
+        res.status(500).send('生成PDF失败');
+        return;
+      }
+
+      // 设置响应头
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${id}.pdf"`);
+
+      // 发送PDF文件
+      const fileStream = fs.createReadStream(pdfPath);
+      fileStream.pipe(res);
+    });
+  } catch (error) {
+    console.error('Download report error:', error);
+    res.status(500).send('下载报告失败');
   }
 });
