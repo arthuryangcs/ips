@@ -143,7 +143,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             {children}
           {/* </div> */}
         </Content>
-        <Footer style={{ textAlign: 'center' }}>游戏IP数字化管理平台 ©{new Date().getFullYear()}</Footer>
+        <Footer style={{ textAlign: 'center' }}>游戏知识产权管理平台 ©{new Date().getFullYear()}</Footer>
       </Layout>
     </Layout>
     </Layout>

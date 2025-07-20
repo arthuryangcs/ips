@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const db = require('./db');
+const getImageVector = require('./imageVector');
 const compareImages = require('./imageComparison');
 const multer = require('multer');
 const fs = require('fs');
@@ -542,17 +543,23 @@ app.post('/api/assets/create', upload.array('files', 10), (req, res) => {  // �
   const certificatePlatform = 'IPS-存证平台';
   const verifyUrl = `http://localhost:4000/verify/${certificateNo}`;
 
+
   // 准备批量插入数据
   const insertPromises = files.map(file => {
+    let vector = []
+    if (assetInfo.resourceType === 'image') {
+       vector = getImageVector.getImageVector(file.path);
+    }
+    console.log("vector", vector);
     return new Promise((resolve, reject) => {
       const insertQuery = `
         INSERT INTO resources (
           filename, file_type, file_path, user_id, resource_type, authorization_status,
           asset_name, asset_no, project, asset_level, creation_date, declarant,
           creation_type, creator, trademark_reg_no, certificate_no, certificate_platform,
-          certificate_timestamp, file_hash, verify_url
+          certificate_timestamp, file_hash, verify_url, vector
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -579,6 +586,7 @@ app.post('/api/assets/create', upload.array('files', 10), (req, res) => {  // �
         // certificateTimestamp,
         fileHash,
         verifyUrl,
+        JSON.stringify(vector),
       ];
 
       db.run(insertQuery, values, function(err) {
@@ -762,6 +770,23 @@ async function downloadImage(url, outputPath) {
   }
 }
 
+function euclideanDistance(vec1, vec2) {
+  if (!vec1 || !vec2) {
+    return 100;
+  }
+  if (vec1.length !== vec2.length) {
+    return 100;
+    throw new Error('向量维度必须相同' + vec1.length + " " + vec2.length);
+  }
+  
+  let sum = 0;
+  for (let i = 0; i < vec1.length; i++) {
+    sum += Math.pow(vec1[i] - vec2[i], 2);
+  }
+  
+  return Math.sqrt(sum);
+}
+
 // 外部侵权检测接口
 app.post('/api/check-external-url', async (req, res) => {
   try {
@@ -770,6 +795,8 @@ app.post('/api/check-external-url', async (req, res) => {
     // 1. 爬取外部URL内容
     const tmpPath = '/Users/yangyemeng/Desktop/ips/src/resource/aaa.jpg';
     await downloadImage(url, tmpPath);
+    const vector = getImageVector.getImageVector(tmpPath);
+    console.log("upload vector", vector);
     // const response = await axios.get(url);
     // const html = response.data;
     // const data = cheerio.load(html);
@@ -779,11 +806,23 @@ app.post('/api/check-external-url', async (req, res) => {
     // fs.writeFileSync(tmpPath, textContent);
 
 
-    const query = 'SELECT * FROM resources where file_type like ?';
-    const resources = await promisify(db.all).bind(db)(query, '%image%');
+    const query = 'SELECT * FROM resources where resource_type = "image"';
+    let resources = await promisify(db.all).bind(db)(query);
 
     const infringementEvidence = [];
     let maxSimilarity = 0;
+
+    resources.forEach(resource => {
+      // 通过数据库里的 vector 计算与 vector 的几何距离
+      try {
+        resource.distance = euclideanDistance(JSON.parse(resource.vector), vector);
+      } catch (error) {
+        resource.distance = 100
+      }
+      console.log("distance", resource.distance);
+    })
+    resources.sort((a, b) => a.distance - b.distance);
+    resources = resources.slice(0, 10);
 
     resources.forEach(resource => {
       // 简化的相似度计算，实际应用中可能需要使用更复杂的算法

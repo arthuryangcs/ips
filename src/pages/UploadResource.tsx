@@ -480,7 +480,7 @@ const UploadResource: React.FC<UploadResourceProps> = ({ onSuccess }) => {
         <Form
           form={form}
           layout="vertical"
-          initialValues={{ creationType: 'self', resourceType: 'code' }}
+          initialValues={{ creationType: 'self', resourceType: 'image' }}
         >
           {renderStepContent()}
         </Form>

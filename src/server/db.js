@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { load } = require('sqlite-vss');
 
 // 创建数据库连接
 const dbPath = path.resolve(__dirname, 'ips.db');
@@ -27,6 +28,19 @@ function initUserTable() {
 
 // 初始化资产表
 function initResourceTable() {
+  load(db);
+  console.log('sqlite-vss扩展加载成功!');
+
+  // 先检查是否有向量扩展
+  // db.run("SELECT load_extension('vector0')", (err) => {
+  //   if (err) {
+  //     console.log('向量扩展可能未安装或加载失败:', err.message);
+  //   } else {
+  //     console.log('向量扩展加载成功');
+  //   }
+  // });
+
+  // 创建新表
   const sql = `
     CREATE TABLE IF NOT EXISTS resources (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,6 +51,7 @@ function initResourceTable() {
       user_id INTEGER NOT NULL,
       resource_type TEXT NOT NULL,
       authorization_status TEXT DEFAULT '未授权',
+      vector VECTOR(2048),
       asset_name TEXT,
       asset_no TEXT,
       project TEXT,
@@ -105,7 +120,8 @@ function initResourceTable() {
       { name: 'certificate_platform', type: 'TEXT' },
       { name: 'certificate_timestamp', type: 'TEXT' },
       { name: 'file_hash', type: 'TEXT' },
-      { name: 'verify_url', type: 'TEXT' }
+      { name: 'verify_url', type: 'TEXT' },
+      { name: 'vector', type: 'VECTOR(2048)' }
     ];
 
     newColumns.forEach(column => {
