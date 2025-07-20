@@ -1,7 +1,7 @@
 import React from 'react';
-import { App as AntdApp, Layout, Typography, Menu, theme } from 'antd';
+import { App as AntdApp, Layout, Menu, theme } from 'antd';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { HomeOutlined, DashboardOutlined, UploadOutlined, LoginOutlined, LogoutOutlined, CheckCircleOutlined, AlertOutlined, PictureOutlined, CodeOutlined} from '@ant-design/icons';
+import { DashboardOutlined, UploadOutlined, LoginOutlined, LogoutOutlined, CheckCircleOutlined, AlertOutlined, PictureOutlined, CodeOutlined} from '@ant-design/icons';
 import { SearchOutlined, BellOutlined, UserOutlined } from '@ant-design/icons';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -12,12 +12,10 @@ import ImageComparison from './pages/ImageComparison';
 import CodeComparison from './pages/CodeComparison';
 import AssetDetail from './pages/AssetDetail';
 import './App.css';
-import logo from './logo.svg';
 import InfringementCheck from './pages/InfringementCheck';
 import RiskMonitoring from './pages/RiskMonitoring';
 import ExternalInfringementCheck from './pages/ExternalInfringementCheck';
 
-const { Title, Paragraph, Text } = Typography;
 const { Sider, Content, Footer, Header } = Layout;
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -108,7 +106,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Header style={{ height: '64px', padding: 8, background: colorBgContainer }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px', height: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <img src={logo} alt="Logo" style={{ height: '32px', marginRight: '16px' }} />
+              <img src={'logo.svg'} alt="Logo" style={{ height: '32px', marginRight: '16px' }} />
               <h1 style={{ fontSize: '24px', margin: 0 }}>游戏知识产权管理平台</h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

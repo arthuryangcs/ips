@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const db = require('./db');
+const compareImages = require('./imageComparison');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
@@ -744,20 +745,41 @@ app.get('/api/resources/:id/download', async (req, res) => {
   }
 });
 
+async function downloadImage(url, outputPath) {
+  try {
+    const response = await axios.get(url, { responseType: 'stream' });
+    const writer = fs.createWriteStream(outputPath);
+    
+    response.data.pipe(writer);
+    
+    return new Promise((resolve, reject) => {
+      writer.on('finish', resolve);
+      writer.on('error', reject);
+    });
+  } catch (error) {
+    console.error(`下载失败: ${url}`, error.message);
+    throw error;
+  }
+}
+
 // 外部侵权检测接口
 app.post('/api/check-external-url', async (req, res) => {
   try {
     const { url } = req.body;
 
     // 1. 爬取外部URL内容
-    const response = await axios.get(url);
-    const html = response.data;
-    const $ = cheerio.load(html);
-    const textContent = $('body').text().trim();
+    const tmpPath = '/Users/yangyemeng/Desktop/ips/src/resource/aaa.jpg';
+    await downloadImage(url, tmpPath);
+    // const response = await axios.get(url);
+    // const html = response.data;
+    // const data = cheerio.load(html);
+    // const textContent = data('body');
+    // console.log(textContent)
+    // const tmpPath = '/Users/yangyemeng/Desktop/ips/src/resource/aaa.jpg';
+    // fs.writeFileSync(tmpPath, textContent);
 
-    // 2. 与内部库比对
-    // 这里是简化的比对逻辑，实际应用中可能需要更复杂的算法
-    const query = 'SELECT * FROM resources where file_type like ? LIMIT 10';
+
+    const query = 'SELECT * FROM resources where file_type like ?';
     const resources = await promisify(db.all).bind(db)(query, '%image%');
 
     const infringementEvidence = [];
@@ -765,8 +787,9 @@ app.post('/api/check-external-url', async (req, res) => {
 
     resources.forEach(resource => {
       // 简化的相似度计算，实际应用中可能需要使用更复杂的算法
-      const similarity = Math.floor(Math.random() * 100);
-      if (similarity > 30) {
+      console.log(`resources: ${resource.file_path}`);
+      const similarity = compareImages.compareImages('/root/test/ips/src/resource/'+resource.file_path.split('/').pop(), '/root/test/ips/src/resource/aaa.jpg');
+      if (similarity > 50) {
         infringementEvidence.push({
           assetName: resource.asset_name,
           id: resource.id,
@@ -777,6 +800,9 @@ app.post('/api/check-external-url', async (req, res) => {
         maxSimilarity = Math.max(maxSimilarity, similarity);
       }
     });
+
+
+    infringementEvidence.sort((a, b) => b.similarity - a.similarity);
 
     // 3. 确定风险级别
     let riskLevel = '低';
