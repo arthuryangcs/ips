@@ -15,10 +15,12 @@ import './App.css';
 import InfringementCheck from './pages/InfringementCheck';
 import RiskMonitoring from './pages/RiskMonitoring';
 import ExternalInfringementCheck from './pages/ExternalInfringementCheck';
+import RiskAlert from './pages/RiskAlert';
 
 const { Sider, Content, Footer, Header } = Layout;
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
@@ -43,6 +45,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (currentPath === '/image-comparison') return 'image-comparison';
     if (currentPath === '/code-comparison') return 'code-comparison';
     if (currentPath === '/external-infringement') return 'external-infringement';
+    if (currentPath === '/risk-alert') return 'risk-alert';
     if (currentPath === '/login') return 'login';
     return 'home';
   };
@@ -67,11 +70,19 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     {
       key: 'ip-risk-radar',
       icon: <AlertOutlined />,
-      label: 'IP风险雷达',
+      label: 'IP资产监测',
       children: [
+        { key: 'risk-alert', icon: <AlertOutlined />, label: '风险预警', onClick: () => handleNavigate('/risk-alert') }
+      ]
+    },
+    {
+      key: 'ip-tools',
+      icon: <AlertOutlined />,
+      label: '自检工具',
+      children: [
+        { key: 'external-infringement', icon: <AlertOutlined />, label: '外部侵权检测', onClick: () => handleNavigate('/external-infringement') },
         { key: 'infringement', icon: <CheckCircleOutlined />, label: '侵权风险扫描', onClick: () => handleNavigate('/infringement') },
         { key: 'risk', icon: <AlertOutlined />, label: '权属健康监测', onClick: () => handleNavigate('/risk') },
-        { key: 'external-infringement', icon: <AlertOutlined />, label: '外部侵权检测', onClick: () => handleNavigate('/external-infringement') },
         { key: 'image-comparison', icon: <PictureOutlined />, label: '图片检测', onClick: () => handleNavigate('/image-comparison') },
         { key: 'code-comparison', icon: <CodeOutlined />, label: '代码检测', onClick: () => handleNavigate('/code-comparison') }
       ]
@@ -103,7 +114,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <Layout>
-        <Header style={{ height: '64px', padding: 8, background: colorBgContainer }}>
+        <Header style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '64px', padding: 8, background: colorBgContainer, zIndex: 1000, boxShadow: '0 1px 1px rgba(0, 0, 0, 0.1)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px', height: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <img src={'logo.svg'} alt="Logo" style={{ height: '32px', marginRight: '16px' }} />
@@ -121,23 +132,25 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
           </div>
         </Header>
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh', marginTop: '64px' }}>
       <Sider
-        breakpoint="lg"
-        collapsedWidth="0"
-        onBreakpoint={(broken) => console.log(broken)}
-        onCollapse={(collapsed, type) => console.log(collapsed, type)}
-        theme="light"
-      >
+          style={{ position: 'fixed', top: '64px', left: 0, height: 'calc(100vh - 64px)', zIndex: 999, overflowY: 'auto'  }}
+          breakpoint="lg"
+          collapsedWidth="0"
+          onBreakpoint={(broken) => console.log(broken)}
+          onCollapse={(collapsed) => setIsCollapsed(collapsed)}
+          theme="light"
+        >
         <Menu
+          // style={{position: 'fixed'}}
           theme="light"
           mode="inline"
           selectedKeys={[getSelectedKey()]}
           items={items}
-         defaultOpenKeys={['ip-library', 'ip-risk-radar']}
+         defaultOpenKeys={['ip-library', 'ip-risk-radar', 'ip-tools']}
         />
       </Sider>
-      <Layout>
+      <Layout style={{ marginLeft: isCollapsed ? '0' : '200px', transition: 'margin-left 0.3s ease' }}>
         <Content style={{ padding: 0 }}>
           {/* <div style={{ background: '#fff', padding: 24, minHeight: 'calc(100vh - 64px)' }}> */}
             {children}
@@ -163,7 +176,7 @@ function App() {
             <Route path="/upload-resource" element={<UploadResource />} />
             <Route path="/infringement" element={<InfringementCheck />} />
             <Route path="/asset-detail" element={<AssetDetail />} />
-            <Route path="/risk" element={<RiskMonitoring />} />
+            <Route path="/risk" element={<RiskMonitoring />} /><Route path="/risk-alert" element={<RiskAlert />} />
             <Route path="/image-comparison" element={<ImageComparison />} />
             <Route path="/code-comparison" element={<CodeComparison />} />
             <Route path="/external-infringement" element={<ExternalInfringementCheck />} />

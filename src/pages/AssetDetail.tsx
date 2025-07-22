@@ -126,12 +126,19 @@ const AssetDetail: React.FC = () => {
     }
 
     setCertifying(true);
+    // 显示加载消息
+    const loadingMessage = messageApi.loading('正在处理存证，请稍候...', 0);
+    // 2秒后自动关闭加载消息
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    loadingMessage();
+
     try {
       const response = await axios.post(`/api/resources/${id}/certify`);
+      // 关闭加载消息
+      // loadingMessage();
+
       if (response.data && response.data.success) {
         // 更新资产信息
-        // const updatedAsset = response.data.asset;
-        // setAsset(updatedAsset);
         try {
           setLoading(true);
           const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
@@ -150,6 +157,9 @@ const AssetDetail: React.FC = () => {
         messageApi.error(response.data?.message || '资源存证失败');
       }
     } catch (err) {
+      // 关闭加载消息
+      // loadingMessage();
+
       messageApi.error('网络错误，请重试');
       console.error('Certify error:', err);
     }

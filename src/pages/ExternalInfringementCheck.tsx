@@ -2,7 +2,7 @@ import { Button, message, Card, Typography, Input, Divider, Alert } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
-import { Modal } from 'antd';
+import { Progress } from 'antd';
 
 const { Title, Text } = Typography;
 
@@ -13,10 +13,8 @@ const ExternalInfringementCheck: React.FC = () => {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
   const [resourceDetails, setResourceDetails] = useState<Array<{resource: any, content: string}>>([]);
-  const [visible, setVisible] = useState(false);
-  const [currentContent, setCurrentContent] = useState('');
-  const [currentFileName, setCurrentFileName] = useState('');
-  const [currentFileType, setCurrentFileType] = useState('');
+  const [progress, setProgress] = useState(0);
+  const [progressText, setProgressText] = useState('');
   const navigate = useNavigate();
 
   const handleCheck = async () => {
@@ -29,11 +27,39 @@ const ExternalInfringementCheck: React.FC = () => {
     setError('');
     setResult(null);
     setResourceDetails([]);
+    setProgress(0);
+    setProgressText('生成特征向量……');
+    let p = 0;
+
+    // 创建一个间隔来更新进度条
+    const interval = setInterval(() => {
+      console.log(p);
+      p += 4;
+      if (p >= 25 && p < 50) {
+        setProgressText('检索相似资产……');
+      } else if (p >= 50) {
+        setProgressText('资产侵权对比……');
+      }
+      if (p >= 100) {
+        clearInterval(interval);
+        setProgress(100);
+      } else {
+        console.log("setProgress");
+        console.log(p);
+        setProgress(p);
+      }
+    }, 300);
 
     try {
+      // 模拟6秒的处理时间
+      // await new Promise(resolve => setTimeout(resolve, 1000));
+
       const response = await axios.post('/api/check-external-url', {
         url
       });
+
+      clearInterval(interval);
+      setProgress(100);
 
       if (response.data && response.data.success) {
         setResult(response.data.result);
@@ -43,6 +69,9 @@ const ExternalInfringementCheck: React.FC = () => {
         messageApi.error('检测失败');
       }
     } catch (err) {
+      clearInterval(interval);
+      setProgress(100);
+
       setError('网络错误，请重试');
       messageApi.error('网络错误，请重试');
       console.error('Check error:', err);
@@ -142,6 +171,20 @@ const ExternalInfringementCheck: React.FC = () => {
           >
             开始检测
           </Button>
+
+          {loading && (
+            <div style={{ marginTop: '1rem' }}>
+              <Progress
+                percent={progress}
+                status="active"
+                strokeWidth={2}
+                style={{ marginBottom: '0.5rem' }}
+              />
+              <Text type="secondary" style={{ display: 'block', textAlign: 'center' }}>
+                {progressText}
+              </Text>
+            </div>
+          )}
         </div>
 
         <Divider />
